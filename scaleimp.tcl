@@ -22,30 +22,56 @@ proc clearImperial {} {
     focus .top.realimp.realft
 }
 
-proc keyhandler {evtyp keystr widg} {
-    set deferred_widget ".helptext"
+proc recalcByRealImperial {} {}
+proc recalcByScaleImperial {} {}
+proc recalcByRealMetric {} {}
+proc recalcByScaleMetric {} {}
+
+proc inputvalidate {evtyp keystr widg} {
     .helptext configure -text "$keystr $widg"
     if [expr $evtyp != 1] then {
         return 1
     }
-    set result [string is digit $keystr]
-    $deferred_widget configure -text "$keystr $widg $result"
-    return [string is integer $keystr]
+    set result [expr [string is double $keystr] \
+        || [string equal "$keystr" "."]]
+    .helptext configure -text "$keystr $widg $result"
+    switch -glob $widg {
+        ".top.realimp.*" {
+            recalcByRealImperial
+        }
+        ".top.scaleinches.entry" {
+            recalcByScaleImperial
+        }
+        ".bottom.realmm.entry" {
+            recalcByRealMetric
+        }
+        ".bottom.scalemm.entry" {
+            recalcByScaleMetric
+        }
+    }
+    return $result
 }
+
+proc validatedEntry {name args} {
+    eval entry $name -validate key -validatecommand \{inputvalidate %d %S %W\} \
+            {*}$args 
+}
+
+label .helptext -text "Select source unit with the radio buttons"
+pack configure .helptext -side bottom
 
 frame .top
 frame .top.realimp
 radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
                 -text "Real ft" -underline 5
 bind . <Alt-f> {.top.realimp.sel invoke}
-entry .top.realimp.realft -width 7 -textvar realft \
-          -validate key -validatecommand {keyhandler %d %S %W}
+validatedEntry .top.realimp.realft -width 7 -textvar realft
 #.top.realimp.realft configure -validatecommand exit
-entry .top.realimp.realin -width 6 -textvar realin
+validatedEntry .top.realimp.realin -width 6 -textvar realin
 label .top.realimp.inchlbl -text "in"
-entry .top.realimp.inchnum -width 4 -textvar realin_num
+validatedEntry .top.realimp.inchnum -width 4 -textvar realin_num
 label .top.realimp.slashlbl -text "/"
-entry .top.realimp.inchdenom -width 4 -textvar realin_denom
+validatedEntry .top.realimp.inchdenom -width 4 -textvar realin_denom
 label .top.realimp.fractlbl -text "fraction"
 button .top.realimp.clear -text "C" -command clearImperial -underline 0
 bind . <Alt-c> {.top.realimp.clear invoke}
@@ -53,7 +79,7 @@ frame .top.scaleinches
 radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
                 -text "Scale in" -underline 6
 bind . <Alt-i> {.top.scaleinches.sel invoke}
-entry .top.scaleinches.entry -width 9 -textvar scalein
+validatedEntry .top.scaleinches.entry -width 9 -textvar scalein
 
 pack configure .top -side top -fill x -pady 8 -padx 4
 pack configure .top.realimp -side left
@@ -72,7 +98,7 @@ pack configure .top.scaleinches.entry -side left
 
 frame .mid
 label .mid.prefix -text "1:"
-entry .mid.scale -width 5 -textvariable scale
+validatedEntry .mid.scale -width 5 -textvariable scale
 label .mid.suffix -text "scale"
 
 pack configure .mid -anchor n
@@ -85,12 +111,12 @@ frame .bottom.realmm
 radiobutton .bottom.realmm.sel -state normal -variable selunit -value 2 \
                 -text "Real mm" -underline 5
 bind . <Alt-m> {.bottom.realmm.sel invoke}
-entry .bottom.realmm.entry -width 10 -textvar realmm
+validatedEntry .bottom.realmm.entry -width 10 -textvar realmm
 frame .bottom.scalemm
 radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
                 -text "Scale mm" -underline 0
 bind . <Alt-s> {.bottom.scalemm.sel invoke}
-entry .bottom.scalemm.entry -width 10 -textvar scalemm
+validatedEntry .bottom.scalemm.entry -width 10 -textvar scalemm
 
 pack configure .bottom -fill x -pady 8
 pack configure .bottom.realmm -side left -padx 16
@@ -99,9 +125,6 @@ pack configure .bottom.realmm.entry -side left
 pack configure .bottom.scalemm -side right -padx 12
 pack configure .bottom.scalemm.sel -side left
 pack configure .bottom.scalemm.entry -side left
-
-label .helptext -text "Select source unit with the radio buttons"
-pack configure .helptext -side bottom
 
 proc recalcByUnit unit {
     if {$unit == 1} then {
