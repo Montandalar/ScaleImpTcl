@@ -3,7 +3,7 @@ tk appname scaleimp
 wm title . ScaleImp
 wm geometry . =500x150
 
-set selunit ri
+set selunit 0
 set scale 1
 
 set realft ""
@@ -19,14 +19,28 @@ proc clearImperial {} {
     global realin; set realin ""
     global realin_num; set realin_num ""
     global realin_denom; set realin_denom ""
+    focus .top.realimp.realft
+}
+
+proc keyhandler {evtyp keystr widg} {
+    set deferred_widget ".helptext"
+    .helptext configure -text "$keystr $widg"
+    if [expr $evtyp != 1] then {
+        return 1
+    }
+    set result [string is digit $keystr]
+    $deferred_widget configure -text "$keystr $widg $result"
+    return [string is integer $keystr]
 }
 
 frame .top
 frame .top.realimp
-radiobutton .top.realimp.sel -state normal -variable selunit -value ri \
+radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
                 -text "Real ft" -underline 5
 bind . <Alt-f> {.top.realimp.sel invoke}
-entry .top.realimp.realft -width 7 -textvar realft
+entry .top.realimp.realft -width 7 -textvar realft \
+          -validate key -validatecommand {keyhandler %d %S %W}
+#.top.realimp.realft configure -validatecommand exit
 entry .top.realimp.realin -width 6 -textvar realin
 label .top.realimp.inchlbl -text "in"
 entry .top.realimp.inchnum -width 4 -textvar realin_num
@@ -36,7 +50,7 @@ label .top.realimp.fractlbl -text "fraction"
 button .top.realimp.clear -text "C" -command clearImperial -underline 0
 bind . <Alt-c> {.top.realimp.clear invoke}
 frame .top.scaleinches
-radiobutton .top.scaleinches.sel -state normal -variable selunit -value si \
+radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
                 -text "Scale in" -underline 6
 bind . <Alt-i> {.top.scaleinches.sel invoke}
 entry .top.scaleinches.entry -width 9 -textvar scalein
@@ -68,12 +82,12 @@ pack configure .mid.suffix -side left -fill y
 
 frame .bottom
 frame .bottom.realmm
-radiobutton .bottom.realmm.sel -state normal -variable selunit -value rm \
+radiobutton .bottom.realmm.sel -state normal -variable selunit -value 2 \
                 -text "Real mm" -underline 5
 bind . <Alt-m> {.bottom.realmm.sel invoke}
 entry .bottom.realmm.entry -width 10 -textvar realmm
 frame .bottom.scalemm
-radiobutton .bottom.scalemm.sel -state normal -variable selunit -value sm \
+radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
                 -text "Scale mm" -underline 0
 bind . <Alt-s> {.bottom.scalemm.sel invoke}
 entry .bottom.scalemm.entry -width 10 -textvar scalemm
@@ -89,5 +103,32 @@ pack configure .bottom.scalemm.entry -side left
 label .helptext -text "Select source unit with the radio buttons"
 pack configure .helptext -side bottom
 
+proc recalcByUnit unit {
+    if {$unit == 1} then {
+        #Real imperial
+    } elseif {$unit == 2} then {
+        #Scale imperail
+    } elseif {$unit == 3} then {
+        #Real metric
+    } elseif {$unit == 4} then {
+        #Scale metric
+    } else {
+        #An error
+    }
+}
+
+proc selectNewUnit unit {
+    global selunit
+    set selunit $unit
+}
+
+proc arrowKeyHandle dir {
+    global selunit
+    selectNewUnit [expr ($selunit + $dir) % 4]
+}
+
+bind . <Key-Up> {arrowKeyHandle -1}
+bind . <Key-Down> {arrowKeyHandle +1}
 focus -force .
-clearImperial
+
+bind . <Control-w> exit
