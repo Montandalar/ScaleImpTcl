@@ -22,6 +22,18 @@ namespace eval util {
         set formatStr [format "%%.%df" $dp]
         return [format $formatStr $v]
     }
+
+    proc emptyAsZero {v} {
+        if {$v eq ""} then {
+            return 0
+        }; return $v
+    }
+
+    proc zeroAsEmpty {v} {
+        if {$v == 0} then {
+            return ""
+        }; return $v
+    }
 }
 
 oo::class create MeasurementModel {
@@ -78,22 +90,28 @@ oo::class create MeasurementModel {
             set numer [expr $numer/2]
             set denom [expr $denom/2]
         }
+        if {$numer == 0} then {set denom 0}
         my variable real_in_numerator
         set real_in_numerator [::util::renderValueDP $numer 0]
         my variable real_in_denominator
         set real_in_denominator [::util::renderValueDP $denom 0]
 
-        my variable real_mm
-        set real_mm $new_mm
-
         my setScaledUnits $new_mm
+
+        my variable real_mm
+        set real_mm [::util::zeroAsEmpty $new_mm]
         my roundScaleUnits
     }
 
     method setByRealImperial {new_ft new_in new_numer new_denom} {
-        #float coercion on denom so that division does not yield an integer
-        set real_mm [expr ($new_ft*304.8) + ($new_in*25.4) + \
-            ($new_numer/[format "%f" $new_denom])*(25.4)]
+        puts "a:$new_ft b:$new_in c:$new_numer d:$new_denom"
+        if {$new_ft ne ""} {set real_mm [expr $new_ft*304.8]}
+        if {$new_in ne ""} {set real_mm [expr $real_mm + ($new_in*25.4)]}
+        if {$new_denom ne "" && $new_numer ne ""} {
+            #float coercion on denom so that division does not yield an integer
+            set real_mm [expr $real_mm + \
+                (($new_numer/[format "%f" $new_denom])*25.4)]
+        }
         my setScaledUnits $real_mm
         set real_ft $new_ft
         set real_in $new_in
@@ -117,6 +135,11 @@ oo::class create MeasurementModel {
         #Limit precision going towards real units
         set real_mm [expr round($real_mm)]
     }
+
+    method scaleRecalc {new_scale method} {
+        set scale $new_scale
+        my $method
+    }
 }
 oo::define MeasurementModel {export varname}
 set mm [MeasurementModel new]
@@ -127,12 +150,8 @@ wm geometry . =500x150
 
 set selunit 0
 
-proc recalcByRealImperial {} {}
-proc recalcByScaleImperial {} {}
-proc recalcByRealMetric {} {}
-proc recalcByScaleMetric {} {}
-
 proc inputvalidate {evtyp keystr widg} {
+    global mm
     .helptext configure -text "$keystr $widg"
     if [expr $evtyp != 1] then {
         return 1
@@ -140,20 +159,6 @@ proc inputvalidate {evtyp keystr widg} {
     set result [expr [string is double $keystr] \
         || [string equal "$keystr" "."]]
     .helptext configure -text "$keystr $widg $result"
-    switch -glob $widg {
-        ".top.realimp.*" {
-            recalcByRealImperial
-        }
-        ".top.scaleinches.entry" {
-            recalcByScaleImperial
-        }
-        ".bottom.realmm.entry" {
-            recalcByRealMetric
-        }
-        ".bottom.scalemm.entry" {
-            recalcByScaleMetric
-        }
-    }
     return $result
 }
 
@@ -165,10 +170,25 @@ proc validatedEntry {name args} {
 label .helptext -text "Select source unit with the radio buttons"
 pack configure .helptext -side bottom
 
+# Toggle states: disabled/normal
+proc toggleRealImperial {state} {
+    set widgets [list realft realin inchnum inchdenom clear]
+    foreach widg $widgets {
+        .top.realimp.$widg configure -state $state
+    }
+}
+proc setSrc {realimp scaleimp realmm scalemm} {
+    toggleRealImperial $realimp
+    .top.scaleinches.entry configure -state $scaleimp
+    .bottom.realmm.entry configure -state $realmm
+    .bottom.scalemm.entry configure -state $scalemm
+}
+
 frame .top
 frame .top.realimp
 radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
-                -text "Real ft" -underline 5
+                -text "Real ft" -underline 5 \
+                -command {setSrc normal disabled disabled disabled}
 bind . <Alt-f> {.top.realimp.sel invoke}
 validatedEntry .top.realimp.realft -width 7 -textvar [$mm varname real_ft]
 #.top.realimp.realft configure -validatecommand exit
@@ -185,7 +205,8 @@ button .top.realimp.clear -text "C" -command "$mm clearImperial" -underline 0
 bind . <Alt-c> {.top.realimp.clear invoke}
 frame .top.scaleinches
 radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
-                -text "Scale in" -underline 6
+                -text "Scale in" -underline 6 \
+                -command {setSrc disabled normal disabled disabled}
 bind . <Alt-i> {.top.scaleinches.sel invoke}
 validatedEntry .top.scaleinches.entry -width 9 -textvar [$mm varname scale_in]
 
@@ -216,13 +237,19 @@ pack configure .mid.suffix -side left -fill y
 
 frame .bottom
 frame .bottom.realmm
+
 radiobutton .bottom.realmm.sel -state normal -variable selunit -value 2 \
-                -text "Real mm" -underline 5
+                -text "Real mm" -underline 5 \
+                -command {setSrc disabled disabled normal disabled}
 bind . <Alt-m> {.bottom.realmm.sel invoke}
 validatedEntry .bottom.realmm.entry -width 10 -textvar [$mm varname real_mm]
+bind .bottom.realmm.entry <KeyRelease> {
+    $mm setByRealmm [::util::emptyAsZero [.bottom.realmm.entry get]]
+}
 frame .bottom.scalemm
 radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
-                -text "Scale mm" -underline 0
+                -text "Scale mm" -underline 0 \
+                -command {setSrc disabled disabled disabled normal}
 bind . <Alt-s> {.bottom.scalemm.sel invoke}
 validatedEntry .bottom.scalemm.entry -width 10 -textvar [$mm varname scale_mm]
 
@@ -233,20 +260,6 @@ pack configure .bottom.realmm.entry -side left
 pack configure .bottom.scalemm -side right -padx 12
 pack configure .bottom.scalemm.sel -side left
 pack configure .bottom.scalemm.entry -side left
-
-proc recalcByUnit unit {
-    if {$unit == 1} then {
-        #Real imperial
-    } elseif {$unit == 2} then {
-        #Scale imperail
-    } elseif {$unit == 3} then {
-        #Real metric
-    } elseif {$unit == 4} then {
-        #Scale metric
-    } else {
-        #An error
-    }
-}
 
 proc selectNewUnit unit {
     global selunit
@@ -264,5 +277,7 @@ focus -force .
 
 bind . <Control-w> exit
 
+setSrc normal disabled disabled disabled
+
 #Show the wish console for debugging
-#console show
+console show
