@@ -1,26 +1,100 @@
-#!/bin/tclsh
+#!/bin/wish
+
+namespace eval util {
+    proc renderValue {v} {
+        return [renderValueDP $v 3]
+    }
+
+    proc renderValueDP {v dp} {
+        #Zero values should be omitted
+        if {$v == 0} then {
+            return ""
+        }
+        #Numbers that, when rounded have `dp` decimal places of zeroes
+        #should be presented as integers
+        set powten [expr pow(10,$dp)]
+        set powten [format "%0.0f" $powten]
+        set l [expr round($v*$powten)]
+        puts $l
+        if {$l % $powten == 0} {
+            return [format "%0.0f" [expr $l/$powten]]
+        }
+        #All others should be represented to the specified precision
+        set formatStr [format "%%.%df" $dp]
+        return [format $formatStr $v]
+    }
+}
+
+oo::class create MeasurementModel {
+    variable real_mm
+    variable real_ft
+    variable real_in
+    variable real_in_numerator
+    variable real_in_denominator
+    variable scale
+    variable scale_in
+    variable scale_mm
+
+    constructor {} {
+        set real_mm ""
+        set real_ft ""
+        set real_in ""
+        set real_in_numerator ""
+        set real_in_denominator ""
+        set scale 1
+        set scale_in ""
+        set scale_mm ""
+    }
+
+    method clearImperial {} {
+        puts "ClearImperial!"
+        set real_ft ""
+        set real_in ""
+        set real_in_numerator ""
+        set real_in_denominator ""
+        focus .top.realimp.realft
+    }
+
+    method setByRealmm {new_mm} {
+        my variable scale_mm
+        my variable scale
+        set scale_mm [expr $new_mm / $scale]
+        set scale_mm [::util::renderValueDP $scale_mm 2]
+        my variable scale_in
+        set scale_in [expr $scale_mm / 25.4]
+        set scale_in [::util::renderValue $scale_in]
+
+        my variable real_ft
+        set real_ft [expr floor($new_mm / 304.8)]
+        set working_mm [expr $new_mm - (304.8*$real_ft)]
+        set real_ft [::util::renderValueDP $real_ft 0]
+        my variable real_in
+        set real_in [expr floor($working_mm / 25.4)]
+        set working_mm [expr $working_mm - ($real_in*25.4)]
+        set real_in [::util::renderValueDP $real_in 0]
+        set numer [expr round($working_mm / 0.396875)]
+        set denom 64
+        while {($numer%2 == 0) && $numer > 1} {
+            set numer [expr $numer/2]
+            set denom [expr $denom/2]
+        }
+        my variable real_in_numerator
+        set real_in_numerator [::util::renderValueDP $numer 0]
+        my variable real_in_denominator
+        set real_in_denominator [::util::renderValueDP $denom 0]
+
+        my variable real_mm
+        set real_mm $new_mm
+    }
+}
+oo::define MeasurementModel {export varname}
+set mm [MeasurementModel new]
+
 tk appname scaleimp
 wm title . ScaleImp
 wm geometry . =500x150
 
 set selunit 0
-set scale 1
-
-set realft ""
-set realin ""
-set realin_num ""
-set realin_denom ""
-set realmm ""
-set scalein ""
-set scalemm ""
-
-proc clearImperial {} {
-    global realft; set realft ""
-    global realin; set realin ""
-    global realin_num; set realin_num ""
-    global realin_denom; set realin_denom ""
-    focus .top.realimp.realft
-}
 
 proc recalcByRealImperial {} {}
 proc recalcByScaleImperial {} {}
@@ -65,21 +139,24 @@ frame .top.realimp
 radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
                 -text "Real ft" -underline 5
 bind . <Alt-f> {.top.realimp.sel invoke}
-validatedEntry .top.realimp.realft -width 7 -textvar realft
+validatedEntry .top.realimp.realft -width 7 -textvar [$mm varname real_ft]
 #.top.realimp.realft configure -validatecommand exit
-validatedEntry .top.realimp.realin -width 6 -textvar realin
+validatedEntry .top.realimp.realin -width 6 -textvar [$mm varname real_in]
 label .top.realimp.inchlbl -text "in"
-validatedEntry .top.realimp.inchnum -width 4 -textvar realin_num
+validatedEntry .top.realimp.inchnum -width 4 \
+                   -textvar [$mm varname real_in_numerator]
 label .top.realimp.slashlbl -text "/"
-validatedEntry .top.realimp.inchdenom -width 4 -textvar realin_denom
+validatedEntry .top.realimp.inchdenom -width 4 \
+                   -textvar [$mm varname real_in_denominator]
 label .top.realimp.fractlbl -text "fraction"
-button .top.realimp.clear -text "C" -command clearImperial -underline 0
+#FIXME: how do I invoke an instance method as the command?
+button .top.realimp.clear -text "C" -command "$mm clearImperial" -underline 0
 bind . <Alt-c> {.top.realimp.clear invoke}
 frame .top.scaleinches
 radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
                 -text "Scale in" -underline 6
 bind . <Alt-i> {.top.scaleinches.sel invoke}
-validatedEntry .top.scaleinches.entry -width 9 -textvar scalein
+validatedEntry .top.scaleinches.entry -width 9 -textvar [$mm varname scale_in]
 
 pack configure .top -side top -fill x -pady 8 -padx 4
 pack configure .top.realimp -side left
@@ -98,7 +175,7 @@ pack configure .top.scaleinches.entry -side left
 
 frame .mid
 label .mid.prefix -text "1:"
-validatedEntry .mid.scale -width 5 -textvariable scale
+validatedEntry .mid.scale -width 5 -textvariable [$mm varname scale]
 label .mid.suffix -text "scale"
 
 pack configure .mid -anchor n
@@ -111,12 +188,12 @@ frame .bottom.realmm
 radiobutton .bottom.realmm.sel -state normal -variable selunit -value 2 \
                 -text "Real mm" -underline 5
 bind . <Alt-m> {.bottom.realmm.sel invoke}
-validatedEntry .bottom.realmm.entry -width 10 -textvar realmm
+validatedEntry .bottom.realmm.entry -width 10 -textvar [$mm varname real_mm]
 frame .bottom.scalemm
 radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
                 -text "Scale mm" -underline 0
 bind . <Alt-s> {.bottom.scalemm.sel invoke}
-validatedEntry .bottom.scalemm.entry -width 10 -textvar scalemm
+validatedEntry .bottom.scalemm.entry -width 10 -textvar [$mm varname scale_mm]
 
 pack configure .bottom -fill x -pady 8
 pack configure .bottom.realmm -side left -padx 16
@@ -155,3 +232,6 @@ bind . <Key-Down> {arrowKeyHandle +1}
 focus -force .
 
 bind . <Control-w> exit
+
+#Show the wish console for debugging
+#console show
