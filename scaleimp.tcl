@@ -15,7 +15,6 @@ namespace eval util {
         set powten [expr pow(10,$dp)]
         set powten [format "%0.0f" $powten]
         set l [expr round($v*$powten)]
-        puts $l
         if {$l % $powten == 0} {
             return [format "%0.0f" [expr $l/$powten]]
         }
@@ -47,7 +46,6 @@ oo::class create MeasurementModel {
     }
 
     method clearImperial {} {
-        puts "ClearImperial!"
         set real_ft ""
         set real_in ""
         set real_in_numerator ""
@@ -55,15 +53,17 @@ oo::class create MeasurementModel {
         focus .top.realimp.realft
     }
 
-    method setByRealmm {new_mm} {
-        my variable scale_mm
-        my variable scale
+    method setScaledUnits {new_mm} {
         set scale_mm [expr $new_mm / $scale]
-        set scale_mm [::util::renderValueDP $scale_mm 2]
-        my variable scale_in
         set scale_in [expr $scale_mm / 25.4]
-        set scale_in [::util::renderValue $scale_in]
+    }
 
+    method roundScaleUnits {} {
+        set scale_mm [::util::renderValueDP $scale_mm 2]
+        set scale_in [::util::renderValue $scale_in]
+    }
+
+    method setByRealmm {new_mm} {
         my variable real_ft
         set real_ft [expr floor($new_mm / 304.8)]
         set working_mm [expr $new_mm - (304.8*$real_ft)]
@@ -85,6 +85,37 @@ oo::class create MeasurementModel {
 
         my variable real_mm
         set real_mm $new_mm
+
+        my setScaledUnits $new_mm
+        my roundScaleUnits
+    }
+
+    method setByRealImperial {new_ft new_in new_numer new_denom} {
+        #float coercion on denom so that division does not yield an integer
+        set real_mm [expr ($new_ft*304.8) + ($new_in*25.4) + \
+            ($new_numer/[format "%f" $new_denom])*(25.4)]
+        my setScaledUnits $real_mm
+        set real_ft $new_ft
+        set real_in $new_in
+        set real_in_numerator $new_numer
+        set real_in_denominator $new_denom
+        my roundScaleUnits
+    }
+
+    method setByScaleImperial {new_scalein} {
+        set scale_in $new_scalein
+        set scale_mm [expr 25.4*$new_scalein]
+        my setByRealmm [expr $scale*$scale_mm]
+        #Limit precision going towards real units
+        set real_mm [expr round($real_mm)]
+    }
+
+    method setByScalemm {new_scalemm} {
+        set scale_mm $new_scalemm
+        set scale_in [expr $new_scalemm / 25.4]
+        my setByRealmm [expr $scale*$scale_mm]
+        #Limit precision going towards real units
+        set real_mm [expr round($real_mm)]
     }
 }
 oo::define MeasurementModel {export varname}
