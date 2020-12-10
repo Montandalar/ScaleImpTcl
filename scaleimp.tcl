@@ -58,15 +58,23 @@ oo::class create MeasurementModel {
     }
 
     method clearImperial {} {
-        set real_ft ""
-        set real_in ""
-        set real_in_numerator ""
-        set real_in_denominator ""
+        set fields [list real_ft real_in real_in_numerator real_in_denominator]
+        foreach field $fields {
+            set field ""
+        }
         focus .top.realimp.realft
     }
 
+    method clear {} {
+        set fields [list real_mm scale_mm scale_in real_ft real_in \
+            real_in_numerator real_in_denominator]
+        foreach field $fields {
+            set $field ""
+        }
+    }
+
     method setScaledUnits {new_mm} {
-        set scale_mm [expr $new_mm / $scale]
+        set scale_mm [expr $new_mm / [format "%f" $scale]]
         set scale_in [expr $scale_mm / 25.4]
     }
 
@@ -76,6 +84,9 @@ oo::class create MeasurementModel {
     }
 
     method setByRealmm {new_mm} {
+        if {$new_mm == 0} then {
+            my clear; return
+        }
         my variable real_ft
         set real_ft [expr floor($new_mm / 304.8)]
         set working_mm [expr $new_mm - (304.8*$real_ft)]
@@ -104,7 +115,20 @@ oo::class create MeasurementModel {
     }
 
     method setByRealImperial {new_ft new_in new_numer new_denom} {
-        puts "a:$new_ft b:$new_in c:$new_numer d:$new_denom"
+        set fields [list new_ft new_in new_numer new_denom]
+        set counter 0
+        foreach field $fields {
+            # Indirection on the arguments of this function
+            set field_deref [set $field]
+            if {$field_deref == 0 || $field_deref eq ""} {
+                set counter [expr $counter+1]
+            }
+        }
+        puts $counter
+        if {$counter >= 4} then {
+            my clear; return
+        }
+        set real_mm ""
         if {$new_ft ne ""} {set real_mm [expr $new_ft*304.8]}
         if {$new_in ne ""} {set real_mm [expr $real_mm + ($new_in*25.4)]}
         if {$new_denom ne "" && $new_numer ne ""} {
@@ -112,6 +136,11 @@ oo::class create MeasurementModel {
             set real_mm [expr $real_mm + \
                 (($new_numer/[format "%f" $new_denom])*25.4)]
         }
+        if {$real_mm eq ""} {
+            # We don't have any valid data (e.g. only num or denom)
+            return
+        }
+        set real_mm [::util::renderValueDP $real_mm 2]
         my setScaledUnits $real_mm
         set real_ft $new_ft
         set real_in $new_in
@@ -121,6 +150,9 @@ oo::class create MeasurementModel {
     }
 
     method setByScaleImperial {new_scalein} {
+        if {$new_scalein == 0} then {
+            my clear; return
+        }
         set scale_in $new_scalein
         set scale_mm [expr 25.4*$new_scalein]
         my setByRealmm [expr $scale*$scale_mm]
@@ -129,6 +161,9 @@ oo::class create MeasurementModel {
     }
 
     method setByScalemm {new_scalemm} {
+        if {$new_scalein == 0} then {
+            my clear; return
+        }
         set scale_mm $new_scalemm
         set scale_in [expr $new_scalemm / 25.4]
         my setByRealmm [expr $scale*$scale_mm]
@@ -184,6 +219,17 @@ proc setSrc {realimp scaleimp realmm scalemm} {
     .bottom.scalemm.entry configure -state $scalemm
 }
 
+proc recalcByImperial {} {
+    set widget_suffixes [list realft realin inchnum inchdenom]
+    set entries [list]
+    foreach widg $widget_suffixes {
+        lappend entries [.top.realimp.$widg get]
+    }
+    global mm
+    $mm setByRealImperial [lindex $entries 0] [lindex $entries 1] \
+        [lindex $entries 2] [lindex $entries 3]
+}
+
 frame .top
 frame .top.realimp
 radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
@@ -191,16 +237,19 @@ radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
                 -command {setSrc normal disabled disabled disabled}
 bind . <Alt-f> {.top.realimp.sel invoke}
 validatedEntry .top.realimp.realft -width 7 -textvar [$mm varname real_ft]
+bind .top.realimp.realft <KeyRelease> recalcByImperial
 #.top.realimp.realft configure -validatecommand exit
 validatedEntry .top.realimp.realin -width 6 -textvar [$mm varname real_in]
+bind .top.realimp.realin <KeyRelease> recalcByImperial
 label .top.realimp.inchlbl -text "in"
 validatedEntry .top.realimp.inchnum -width 4 \
                    -textvar [$mm varname real_in_numerator]
+bind .top.realimp.inchnum <KeyRelease> recalcByImperial
 label .top.realimp.slashlbl -text "/"
 validatedEntry .top.realimp.inchdenom -width 4 \
                    -textvar [$mm varname real_in_denominator]
+bind .top.realimp.inchdenom <KeyRelease> recalcByImperial
 label .top.realimp.fractlbl -text "fraction"
-#FIXME: how do I invoke an instance method as the command?
 button .top.realimp.clear -text "C" -command "$mm clearImperial" -underline 0
 bind . <Alt-c> {.top.realimp.clear invoke}
 frame .top.scaleinches
@@ -209,6 +258,9 @@ radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
                 -command {setSrc disabled normal disabled disabled}
 bind . <Alt-i> {.top.scaleinches.sel invoke}
 validatedEntry .top.scaleinches.entry -width 9 -textvar [$mm varname scale_in]
+bind .top.scaleinches.entry <KeyRelease> {
+    $mm setByScaleImperial [::util::emptyAsZero [.top.scaleinches.entry get]]
+}
 
 pack configure .top -side top -fill x -pady 8 -padx 4
 pack configure .top.realimp -side left
@@ -252,6 +304,9 @@ radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
                 -command {setSrc disabled disabled disabled normal}
 bind . <Alt-s> {.bottom.scalemm.sel invoke}
 validatedEntry .bottom.scalemm.entry -width 10 -textvar [$mm varname scale_mm]
+bind .bottom.scalemm.entry <KeyRelease> {
+    $mm setByScalemm [::util::emptyAsZero [.bottom.scalemm.entry get]]
+}
 
 pack configure .bottom -fill x -pady 8
 pack configure .bottom.realmm -side left -padx 16
