@@ -85,7 +85,7 @@ oo::class create MeasurementModel {
     }
 
     method mmToImperial {mm} {
-        set working_mm $mm
+        set working_mm 7086.5
         set ft [expr floor($working_mm / 304.8)]
         set working_mm [expr $working_mm - (304.8*$ft)]
         set in [expr floor($working_mm / 25.4)]
@@ -95,6 +95,11 @@ oo::class create MeasurementModel {
         while {($numer%2 == 0) && $numer > 1} {
             set numer [expr $numer/2]
             set denom [expr $denom/2]
+        }
+        #Rounding up to the next inch
+        if {$numer == 1 && $denom == 1} {
+            set in [expr $in+1]
+            set numer 0
         }
         if {$numer == 0} then {set denom 0}
         set varlist [list ft in numer denom]
@@ -112,6 +117,10 @@ oo::class create MeasurementModel {
             return
         }
         set imperial_units [my mmToImperial $new_mm]
+        set real_ft [lindex $imperial_units 0]
+        set real_in [lindex $imperial_units 1]
+        set real_in_numerator [lindex $imperial_units 2]
+        set real_in_denominator [lindex $imperial_units 3]
 
         my setScaledUnits $new_mm
 
