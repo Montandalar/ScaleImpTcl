@@ -124,7 +124,7 @@ oo::class create MeasurementModel {
                 set counter [expr $counter+1]
             }
         }
-        puts $counter
+        #We don't have any data
         if {$counter >= 4} then {
             my clear; return
         }
@@ -171,9 +171,24 @@ oo::class create MeasurementModel {
         set real_mm [expr round($real_mm)]
     }
 
-    method scaleRecalc {new_scale method} {
+    method scaleRecalc {new_scale src} {
+        if {$new_scale eq ""} then return
         set scale $new_scale
-        my $method
+        switch $src {
+            0 {
+                my setByRealImperial $real_ft $real_in \
+                    $real_in_numerator $real_in_denominator
+            }
+            1 {
+                my setByScaleImperial $scale_in
+            }
+            2 {
+                my setByRealmm $real_mm
+            }
+            3 {
+                my setByScalemm $scale_mm
+            }
+        }
     }
 }
 oo::define MeasurementModel {export varname}
@@ -280,6 +295,11 @@ pack configure .top.scaleinches.entry -side left
 frame .mid
 label .mid.prefix -text "1:"
 validatedEntry .mid.scale -width 5 -textvariable [$mm varname scale]
+bind .mid.scale <KeyRelease> {
+    global selunit
+    set scale [.mid.scale get]
+    $mm scaleRecalc $scale $selunit
+}
 label .mid.suffix -text "scale"
 
 pack configure .mid -anchor n
@@ -335,4 +355,4 @@ bind . <Control-w> exit
 setSrc normal disabled disabled disabled
 
 #Show the wish console for debugging
-console show
+#console show
