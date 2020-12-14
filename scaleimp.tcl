@@ -75,7 +75,7 @@ oo::class create MeasurementModel {
     }
 
     method setScaledUnits {new_mm} {
-        set scale_mm [expr $new_mm / [format "%f" $scale]]
+        set scale_mm [expr $new_mm / [::tcl::mathfunc::double $scale]]
         set scale_in [expr $scale_mm / 25.4]
     }
 
@@ -85,7 +85,7 @@ oo::class create MeasurementModel {
     }
 
     method mmToImperial {mm} {
-        set working_mm 7086.5
+        set working_mm $mm
         set ft [expr floor($working_mm / 304.8)]
         set working_mm [expr $working_mm - (304.8*$ft)]
         set in [expr floor($working_mm / 25.4)]
@@ -96,10 +96,14 @@ oo::class create MeasurementModel {
             set numer [expr $numer/2]
             set denom [expr $denom/2]
         }
-        #Rounding up to the next inch
+        #Rounding up to the next inch, inch to ft
         if {$numer == 1 && $denom == 1} {
             set in [expr $in+1]
             set numer 0
+        }
+        if {$in == 12} {
+            set in 0
+            set ft [expr $ft+1]
         }
         if {$numer == 0} then {set denom 0}
         set varlist [list ft in numer denom]
@@ -111,9 +115,9 @@ oo::class create MeasurementModel {
     }
 
     method setByRealmm {new_mm} {
-        if {$new_mm == 0} then {
+        if {$new_mm == 0 || $new_mm eq ""} then {
             my clear
-            set real_mm 0
+            set real_mm $new_mm
             return
         }
         set imperial_units [my mmToImperial $new_mm]
@@ -123,8 +127,6 @@ oo::class create MeasurementModel {
         set real_in_denominator [lindex $imperial_units 3]
 
         my setScaledUnits $new_mm
-
-        my variable real_mm
         my roundScaleUnits
     }
 
@@ -133,9 +135,9 @@ oo::class create MeasurementModel {
         if {$ft ne ""} {set mm [expr $ft*304.8]}
         if {$in ne ""} {set mm [expr $mm + ($in*25.4)]}
         if {$numer ne "" && $denom ne ""} {
-            #float coercion on denom so that division does not yield an integer
+            #float conversion on denom so division does not yield an integer
             set mm [expr $real_mm + \
-                (($numer/[format "%f" $denom])*25.4)]
+                (($numer/[::tcl::mathfunc::double $denom])*25.4)]
 
         }
         return $mm
@@ -177,8 +179,10 @@ oo::class create MeasurementModel {
     }
 
     method setByScaleImperial {new_scalein} {
-        if {$new_scalein eq ""} then {
-            my clear; return
+        if {$new_scalein == 0 || $new_scalein eq ""} then {
+            my clear
+            set scale_in $new_scalein
+            return
         }
         set scale_in $new_scalein
         set scale_mm [expr $new_scalein * 25.4]
@@ -187,8 +191,10 @@ oo::class create MeasurementModel {
     }
 
     method setByScalemm {new_scalemm} {
-        if {$new_scalemm == 0} then {
-            my clear; return
+        if {$new_scalemm == 0 || $new_scalemm eq ""} then {
+            my clear
+            set scale_mm $new_scalemm
+            return
         }
         set scale_mm $new_scalemm
         set scale_in [::util::renderValue [expr $new_scalemm / 25.4]]
@@ -284,6 +290,12 @@ proc keyReleaseHandler {widg key} {
         ".bottom.scalemm.entry" {
             $mm setByScalemm [.bottom.scalemm.entry get]
         }
+    }
+    set textcontents [$widg get]
+    if {[string equal $textcontents "0"]} then {
+        $widg icursor 1
+    } elseif {[string equal $textcontents "0."]} then {
+        $widg icursor 2
     }
 }
 
