@@ -136,7 +136,7 @@ oo::class create MeasurementModel {
         if {$in ne ""} {set mm [expr $mm + ($in*25.4)]}
         if {$numer ne "" && $denom ne ""} {
             #float conversion on denom so division does not yield an integer
-            set mm [expr $real_mm + \
+            set mm [expr $mm + \
                 (($numer/[::tcl::mathfunc::double $denom])*25.4)]
 
         }
@@ -202,7 +202,9 @@ oo::class create MeasurementModel {
     }
 
     method scaleRecalc {new_scale src} {
-        if {$new_scale eq ""} then return
+        if {$new_scale eq "" || $new_scale == 0} then {
+            return
+        }
         set scale $new_scale
         switch $src {
             0 { my setByRealImperial $real_ft $real_in \
@@ -224,12 +226,10 @@ set selunit 0
 
 proc inputvalidate {evtyp newval widg} {
     global mm
-    .helptext configure -text "$newval $widg"
     if [expr $evtyp != 1] then {
         return 1
     }
     set result [expr [string is double $newval] || [string equal $newval "."]]
-    .helptext configure -text "$newval $widg $result"
     return $result
 }
 
@@ -271,8 +271,18 @@ proc recalcByImperial {} {
 proc keyReleaseHandler {widg key} {
     set processKeys [list 0 1 2 3 4 5 6 7 8 9 period BackSpace Delete]
     if {[lsearch $processKeys $key] == -1} then return
-    if [string equal [$widg get] "."] then return
+    set scale [.mid.scale get]
+    if {$scale eq "" || $scale == 0} then {
+        .helptext configure -text "! Scale is invalid !"
+        .helptext configure -foreground red
+    } else {
+        .helptext configure -foreground black
+        .helptext configure -text ""
+    }
+    if {$scale eq "" || $scale == 0} then return
     global mm
+
+
     switch -glob $widg {
         ".top.realimp.*" {
             recalcByImperial
@@ -282,7 +292,7 @@ proc keyReleaseHandler {widg key} {
         }
         ".mid.scale" {
             global selunit
-            $mm scaleRecalc [.mid.scale get] $selunit
+            $mm scaleRecalc $scale $selunit
         }
         ".bottom.realmm.entry" {
             $mm setByRealmm [.bottom.realmm.entry get]
@@ -291,6 +301,7 @@ proc keyReleaseHandler {widg key} {
             $mm setByScalemm [.bottom.scalemm.entry get]
         }
     }
+
     set textcontents [$widg get]
     if {[string equal $textcontents "0"]} then {
         $widg icursor 1
@@ -308,6 +319,8 @@ proc clearInvalidEntry {widg} {
     if {[string equal $widg .mid.scale ] \
         && [string equal [$widg get] ""]} {
         $widg insert 0 1
+        .helptext configure -foreground black
+        .helptext configure -text ""
     }
 }
 
