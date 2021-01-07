@@ -368,8 +368,8 @@ pack configure .top.scaleinches.entry -side left
 frame .mid
 label .mid.prefix -text "1:"
 validatedEntry .mid.scale -width 5 -textvariable [$mm varname scale]
-bind . <Alt-c> {focus .mid.scale}
-label .mid.suffix -text "scale" -underline 1
+bind . <Alt-a> {focus .mid.scale}
+label .mid.suffix -text "scale" -underline 2
 
 pack configure .mid -anchor n
 pack configure .mid.prefix -side left -fill y
