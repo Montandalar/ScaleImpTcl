@@ -220,8 +220,6 @@ set mm [MeasurementModel new]
 tk appname scaleimp
 wm title . ScaleImp
 wm geometry . =500x150
-set imgIcon [image create photo -file "ScaleImp.png"]
-wm iconphoto . -default $imgIcon
 
 set selunit 0
 
