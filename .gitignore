@@ -1,1 +1,6 @@
 .*.swp
+sdx
+*.exe
+ResourceHacker.ini
+Session.vim
+scaleimp.vfs
