@@ -1,3 +1,5 @@
+package require platform
+
 #For each of the wanted files, find it on the path, and complain if not found.
 proc got_what_we_wanted {wanted PATH} {
 	set len [string length $PATH]
@@ -67,44 +69,73 @@ proc needPrereqs {assigned} {
 	return $errortext
 }
 
-proc doBuild {} {
+proc doBuild {haveUpx platform exeSuffix} {
+	# Clean up any previous artificates
 	file delete -force scaleimp;
-	file delete -force scaleimp.exe;
+	file delete -force scaleimp$exeSuffix
 	file delete -force scaleimp.vfs
-	file delete -force tclkit-for-scaleimp.exe
-
-	file mkdir scaleimp.vfs 
-	file copy -force scaleimp.tcl scaleimp.vfs\\main.tcl
+	file delete -force tclkit-for-scaleimp$exeSuffix
 
 	# If I try to use a tcl file copy, it extracts the metakit filesystem out of 
 	# tclkit.exe and dumps it to a directory called scaleimp.exe
-	exec cmd /c copy tclkit.exe tclkit-for-scaleimp.exe
+	exec cmd /c copy tclkit$exeSuffix tclkit-for-scaleimp$exeSuffix
 
-	# Branding
-	exec ResourceHacker.exe -open tclkit-for-scaleimp.exe -action addoverwrite \
-	-res ScaleImp.ico -mask ICONGROUP,TK, -save tclk4si.brand.exe
-	file delete -force tclkit-for-scaleimp.exe
-	file rename tclk4si.brand.exe tclkit-for-scaleimp.exe
+	# Branding (currently windows-only)
+	if [expr ![string first win32 $platform]] {
+		exec ResourceHacker -open tclkit-for-scaleimp$exeSuffix \
+			-action addoverwrite \
+			-res ScaleImp.ico \
+			-mask ICONGROUP,TK, \
+			-save tclk4si.brand.exe
+		file delete -force tclkit-for-scaleimp$exeSuffix
+		file rename tclk4si.brand$exeSuffix tclkit-for-scaleimp$exeSuffix
+	}
 
-	set pid [exec tclkit.exe sdx \
+	# Packaging ScaleImp code
+	file mkdir scaleimp.vfs
+	file copy -force scaleimp.tcl scaleimp.vfs\\main.tcl
+	set pid [exec tclkit sdx \
 		wrap scaleimp -runtime tclkit-for-scaleimp.exe &]
 	after 2000
-	exec taskkill /f /pid $pid
+	if [expr ![string first win32 $platform]] {
+		exec taskkill /f /pid $pid
+	} else { #UNIXy
+		exec kill $pid
+	}
 
-	file rename scaleimp scaleimp.exe
-	set errortext "Built ScaleImpTcl successfully!";
-	return $errortext
+	if $haveUpx {
+		exec upx scaleimp
+	}
+
+	file rename -force scaleimp scaleimp$exeSuffix
+	return "Built ScaleImpTcl successfully!";
+}
+
+set platform [platform::generic]
+if [expr ![string first win32 $platform]] {
+	set exeSuffix ".exe"
+} else {
+	set exeSuffix ""
+}
+
+set errorText ""
+lassign [got_what_we_wanted "upx$exeSuffix" $env(PATH)] overall assigned
+set haveUpx 1
+if [expr !$overall] {
+	set errorText "UPX not found, final result will not be compressed.\n"
+	set haveUpx 0
 }
 
 lassign [ \
-	got_what_we_wanted {tclkit.exe ResourceHacker.exe sdx} \
+	got_what_we_wanted "tclkit$exeSuffix ResourceHacker$exeSuffix sdx" \
 	$env(PATH) \
 ] overall assigned
 
 if [expr !$overall] {
-	set errorText [needPrereqs $assigned]
+	set errorText [string cat $errorText [needPrereqs $assigned]]
 } else {
-	set errorText [doBuild]
+	set errorText [string cat $errorText \
+		[doBuild $haveUpx $platform $exeSuffix]]
 }
 
 label .helptext -text $errorText
