@@ -366,8 +366,8 @@ pack configure .top.scaleinches.entry -side left
 frame .mid
 label .mid.prefix -text "1:"
 validatedEntry .mid.scale -width 5 -textvariable [$mm varname scale]
-bind . <Alt-a> {focus .mid.scale}
-label .mid.suffix -text "scale" -underline 2
+bind . <Alt-s> {focus .mid.scale}
+label .mid.suffix -text "scale" -underline 0
 
 pack configure .mid -anchor n
 pack configure .mid.prefix -side left -fill y
@@ -384,9 +384,9 @@ bind . <Alt-m> {.bottom.realmm.sel invoke; focus .bottom.realmm.entry}
 validatedEntry .bottom.realmm.entry -width 10 -textvar [$mm varname real_mm]
 frame .bottom.scalemm
 radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
-                -text "Scale mm" -underline 0 \
+                -text "Scale mm" -underline 2 \
                 -command {setSrc disabled disabled disabled normal}
-bind . <Alt-s> {.bottom.scalemm.sel invoke; focus .bottom.scalemm.entry}
+bind . <Alt-a> {.bottom.scalemm.sel invoke; focus .bottom.scalemm.entry}
 validatedEntry .bottom.scalemm.entry -width 10 -textvar [$mm varname scale_mm]
 
 pack configure .bottom -fill x -pady 8
