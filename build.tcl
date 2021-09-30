@@ -3,9 +3,6 @@ package require platform
 #For each of the wanted files, find it on the path, and complain if not found.
 proc got_what_we_wanted {wanted PATH} {
 	set len [string length $PATH]
-	puts [string cat "PATH=" $PATH]
-	puts [string cat "wanted=" $wanted]
-	puts [string cat "len=" $len]
 	# All paths in PATH
 	foreach prog $wanted {
 		dict set progs $prog 0
@@ -16,42 +13,28 @@ proc got_what_we_wanted {wanted PATH} {
 		set lidx 0
 		# All programs in wanted
 		while 1 {
-			puts [string cat "  wanted=" $wanted]
 			set prg [lindex $wanted $lidx]
 			set execName [file join $dir $prg]
-			puts [string cat "  " $execName]
 			if [file exists $execName] {
-				puts "    exists"
 				set wanted [concat [lrange $wanted 0 $lidx-1] \
 					[lrange $wanted $lidx+1 end]]
-				dict set progs $prg 1
+				dict set progs $prg $execName
 				set lidx 0
-				#dict set progs $prg execName
 				#break - don't, may be more than one in current dir
 			} else {
 				incr lidx
 			}
-			if [expr $lidx >= [expr [llength $wanted]]] {
-				puts "    wanted=$wanted"
-				puts "    lidx=$lidx"
-				puts "    donehere."
+			if [expr \
+				[expr $lidx >= [expr [llength $wanted]]] \
+				|| [expr [llength $wanted] <= 0]] {
 				break
 			}
 		}
-		puts [string cat "break?=" [expr $nextIdx < 0]]
 		if [expr $nextIdx < 0] {
 			break
 		}
 		set idx [expr $nextIdx + 1]
 	}
-	puts "FINAL wanted=$wanted"
-	puts [string cat "llength wanted=" [llength $wanted]]
-	puts "FINAL Progs=$progs"
-	foreach x [dict keys $progs] {
-		puts [string cat $x "=" [dict get $progs $x]]
-	}
-	set succ [expr [llength "$wanted"] == 0]
-	puts "succ=$succ"
 	return [list [expr [llength "$wanted"] == 0] $progs]
 }
 
@@ -69,16 +52,22 @@ proc needPrereqs {assigned} {
 	return $errortext
 }
 
-proc doBuild {haveUpx platform exeSuffix} {
+proc doBuild {haveUpx platform exeSuffix progs} {
 	# Clean up any previous artificates
 	file delete -force scaleimp;
 	file delete -force scaleimp$exeSuffix
 	file delete -force scaleimp.vfs
 	file delete -force tclkit-for-scaleimp$exeSuffix
 
-	# If I try to use a tcl file copy, it extracts the metakit filesystem out of 
-	# tclkit.exe and dumps it to a directory called scaleimp.exe
-	exec cmd /c copy tclkit$exeSuffix tclkit-for-scaleimp$exeSuffix
+	# If I try to use a tcl file copy, it extracts the metakit filesystem out of
+	# tclkit.exe and dumps it to a directory called scaleimp.exe. Not useful!
+	if [expr ![string first win32 $platform]] {
+		# Thanks tcl for using forward slash even on Windows :|
+		set TCLKIT [string map {/ \\} [dict get $progs tclkit$exeSuffix]]
+		exec cmd /c copy /y $TCLKIT tclkit-for-scaleimp$exeSuffix
+	} else { #UNIXy
+		exec cp [dict get $progs tclkit] tclkit-for-scaleimp$exeSuffix
+	}
 
 	# Branding (currently windows-only)
 	if [expr ![string first win32 $platform]] {
@@ -94,7 +83,8 @@ proc doBuild {haveUpx platform exeSuffix} {
 	# Packaging ScaleImp code
 	file mkdir scaleimp.vfs
 	file copy -force scaleimp.tcl scaleimp.vfs\\main.tcl
-	set pid [exec tclkit sdx \
+	set SDX [string map {/ \\} [dict get $progs sdx]]
+	set pid [exec tclkit $SDX \
 		wrap scaleimp -runtime tclkit-for-scaleimp.exe &]
 	after 2000
 	if [expr ![string first win32 $platform]] {
@@ -135,7 +125,7 @@ if [expr !$overall] {
 	set errorText [string cat $errorText [needPrereqs $assigned]]
 } else {
 	set errorText [string cat $errorText \
-		[doBuild $haveUpx $platform $exeSuffix]]
+		[doBuild $haveUpx $platform $exeSuffix $assigned]]
 }
 
 label .helptext -text $errorText
