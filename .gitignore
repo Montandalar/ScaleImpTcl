@@ -1,6 +1,9 @@
 .*.swp
-sdx
 *.exe
+sdx
 ResourceHacker.ini
 Session.vim
 scaleimp.vfs
+tclkit
+scaleimp
+tclkit-for-scaleimp

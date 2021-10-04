@@ -1,14 +1,28 @@
+#!/usr/bin/tclsh
 package require platform
+package require Tk
+
+proc fixPath {path platform} {
+    if [expr ![string first win32 $platform]] {
+        return [string map {/ \\} $path]
+    } else {
+        return $path
+    }
+}
 
 #For each of the wanted files, find it on the path, and complain if not found.
-proc got_what_we_wanted {wanted PATH} {
+proc got_what_we_wanted {wanted PATH pathsep slash} {
+        set PATH ${PATH}${pathsep}.${slash}
 	set len [string length $PATH]
 	# All paths in PATH
 	foreach prog $wanted {
 		dict set progs $prog 0
 	}
 	for {set idx 0} {$idx < $len} {} {
-		set nextIdx [string first ";" "$PATH" $idx]
+		set nextIdx [string first $pathsep "$PATH" $idx]
+                if [expr $nextIdx == -1] {
+                    set nextIdx $len
+                }
 		set dir [string range $PATH $idx $nextIdx-1]
 		set lidx 0
 		# All programs in wanted
@@ -31,7 +45,7 @@ proc got_what_we_wanted {wanted PATH} {
 			}
 		}
 		if [expr $nextIdx < 0] {
-			break
+                    break
 		}
 		set idx [expr $nextIdx + 1]
 	}
@@ -42,7 +56,7 @@ proc needPrereqs {assigned} {
 	set errortext ""
 	foreach prog [dict keys $assigned] {
 		set v [dict get $assigned $prog]
-		if [expr !$v] {
+		if [string equal $v 0] {
 			set errortext [string cat $errortext "Missing prerequisite: $prog\n"]
 		}
 	}
@@ -52,7 +66,7 @@ proc needPrereqs {assigned} {
 	return $errortext
 }
 
-proc doBuild {haveUpx platform exeSuffix progs} {
+proc doBuild {haveUpx platform exeSuffix progs slash} {
 	# Clean up any previous artificates
 	file delete -force scaleimp;
 	file delete -force scaleimp$exeSuffix
@@ -77,20 +91,24 @@ proc doBuild {haveUpx platform exeSuffix progs} {
 			-mask ICONGROUP,TK, \
 			-save tclk4si.brand.exe
 		file delete -force tclkit-for-scaleimp$exeSuffix
-		file rename tclk4si.brand$exeSuffix tclkit-for-scaleimp$exeSuffix
+		file rename tclk4si.brand$exeSuffix \
+                    tclkit-for-scaleimp$exeSuffix
 	}
 
 	# Packaging ScaleImp code
 	file mkdir scaleimp.vfs
-	file copy -force scaleimp.tcl scaleimp.vfs\\main.tcl
-	set SDX [string map {/ \\} [dict get $progs sdx]]
-	set pid [exec tclkit $SDX \
-		wrap scaleimp -runtime tclkit-for-scaleimp.exe &]
+	file copy -force scaleimp.tcl scaleimp.vfs${slash}main.tcl
+        set SDX [fixPath [dict get $progs sdx] $platform]
+        set TCLKIT [fixPath [dict get $progs tclkit] $platform]
+	set pid [exec $TCLKIT $SDX \
+		wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix &]
 	after 2000
 	if [expr ![string first win32 $platform]] {
 		exec taskkill /f /pid $pid
 	} else { #UNIXy
-		exec kill $pid
+            try {
+                exec kill $pid
+            } trap CHILDSTATUS {} {}
 	}
 
 	if $haveUpx {
@@ -104,28 +122,43 @@ proc doBuild {haveUpx platform exeSuffix progs} {
 set platform [platform::generic]
 if [expr ![string first win32 $platform]] {
 	set exeSuffix ".exe"
+        set pathSep ";"
+        set slash "\\"
 } else {
 	set exeSuffix ""
+        set pathSep ":"
+        set slash "/"
 }
 
 set errorText ""
-lassign [got_what_we_wanted "upx$exeSuffix" $env(PATH)] overall assigned
-set haveUpx 1
-if [expr !$overall] {
-	set errorText "UPX not found, final result will not be compressed.\n"
-	set haveUpx 0
+set haveUpx 0
+#UPX only supported on Windows; on linux it kills the VFS
+if [expr ![string first win32 $platform]] {
+    lassign [got_what_we_wanted "upx$exeSuffix" $env(PATH) $pathSep $slash] \
+        overall assigned
+    if [expr $overall] {
+        set errorText "UPX not found, final result will not be compressed.\n"
+        set haveUpx 1
+    }
+}
+
+set hardDeps "tclkit$exeSuffix sdx"
+if [expr ![string first win32 $platform]] {
+    set hardDeps [lappend hardDeps ResourceHacker.exe]
 }
 
 lassign [ \
-	got_what_we_wanted "tclkit$exeSuffix ResourceHacker$exeSuffix sdx" \
+	got_what_we_wanted "$hardDeps" \
 	$env(PATH) \
+        $pathSep \
+        $slash \
 ] overall assigned
 
 if [expr !$overall] {
 	set errorText [string cat $errorText [needPrereqs $assigned]]
 } else {
 	set errorText [string cat $errorText \
-		[doBuild $haveUpx $platform $exeSuffix $assigned]]
+		[doBuild $haveUpx $platform $exeSuffix $assigned $slash]]
 }
 
 label .helptext -text $errorText

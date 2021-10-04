@@ -1,4 +1,5 @@
 #!/bin/wish
+package require Tk
 
 namespace eval util {
     proc renderValue {v} {
