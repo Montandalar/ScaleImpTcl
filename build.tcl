@@ -80,7 +80,7 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
         set TCLKIT [string map {/ \\} [dict get $progs tclkit$exeSuffix]]
         exec cmd /c copy /y $TCLKIT tclkit-for-scaleimp$exeSuffix
     } else { #UNIXy
-        exec cp [dict get $progs tclkit] tclkit-for-scaleimp$exeSuffix
+        exec cp [dict get $progs tclkit$exeSuffix] tclkit-for-scaleimp$exeSuffix
     }
 
     # Branding (currently windows-only)
@@ -99,7 +99,7 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
     file mkdir scaleimp.vfs
     file copy -force scaleimp.tcl scaleimp.vfs${slash}main.tcl
         set SDX [fixPath [dict get $progs sdx] $platform]
-        set TCLKIT [fixPath [dict get $progs tclkit] $platform]
+        set TCLKIT [fixPath [dict get $progs tclkit$exeSuffix] $platform]
     set pid [exec $TCLKIT $SDX \
         wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix &]
     after 2000
