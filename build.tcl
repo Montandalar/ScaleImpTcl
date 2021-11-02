@@ -83,8 +83,10 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
         exec cp [dict get $progs tclkit$exeSuffix] tclkit-for-scaleimp$exeSuffix
     }
 
-    # Branding (currently windows-only)
-    if [expr ![string first win32 $platform]] {
+    # Branding
+    file mkdir scaleimp.vfs
+    file copy -force scaleimp24.png scaleimp.vfs${slash}ScaleImp.png
+    if [expr ![string first "win32" $platform]] {
         exec ResourceHacker -open tclkit-for-scaleimp$exeSuffix \
             -action addoverwrite \
             -res ScaleImp.ico \
@@ -96,19 +98,18 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
     }
 
     # Packaging ScaleImp code
-    file mkdir scaleimp.vfs
     file copy -force scaleimp.tcl scaleimp.vfs${slash}main.tcl
-        set SDX [fixPath [dict get $progs sdx] $platform]
-        set TCLKIT [fixPath [dict get $progs tclkit$exeSuffix] $platform]
+    set SDX [fixPath [dict get $progs sdx] $platform]
+    set TCLKIT [fixPath [dict get $progs tclkit$exeSuffix] $platform]
     set pid [exec $TCLKIT $SDX \
         wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix &]
     after 2000
     if [expr ![string first win32 $platform]] {
         exec taskkill /f /pid $pid
-    } else { #UNIXy
+        } else { #UNIXy
             try {
-                exec kill $pid
-            } trap CHILDSTATUS {} {}
+            exec kill $pid
+        } trap CHILDSTATUS {} {}
     }
 
     if $haveUpx {
