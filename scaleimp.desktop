@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=ScaleImp
+Comment=Scale and unit calculator
+Exec=/usr/bin/scaleimp
+Icon=scaleimp
+Terminal=false
+Type=Application
+Categories=Utility;Engineering

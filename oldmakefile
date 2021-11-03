@@ -1,0 +1,22 @@
+TCLKIT_CMD = ../kitcreator/tclkit-8.6.11
+SDX_CMD = ../kitcreator/sdx-20110317.kit
+
+scaleimp: scaleimp.vfs/main.tcl scaleimp.vfs/ScaleImp.png
+	cp $(TCLKIT_CMD) ./tclkit
+	$(TCLKIT_CMD) $(SDX_CMD) wrap scaleimp -runtime ./tclkit
+	rm ./tclkit
+	rm -r scaleimp.vfs
+
+scaleimp.vfs:
+	mkdir scaleimp.vfs
+
+scaleimp.vfs/main.tcl: scaleimp.vfs
+	cp scaleimp.tcl scaleimp.vfs/main.tcl
+
+scaleimp.vfs/ScaleImp.png: scaleimp.vfs
+	cp ScaleImp.png scaleimp.vfs/
+
+clean:
+	rm -rf scaleimp.vfs
+	rm -f scaleim
+	rm -f tclkit
