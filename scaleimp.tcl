@@ -221,12 +221,15 @@ set mm [MeasurementModel new]
 tk appname scaleimp
 wm title . ScaleImp
 wm geometry . =500x150
+set imgIcon ""
 if [file exists "/usr/share/icons/hicolor/16x16/apps/scaleimp.png"] {
     set imgIcon [image create photo -file "/usr/share/icons/hicolor/16x16/apps/scaleimp.png"]
 } elseif [file exists "ScaleImp.png"] {
     set imgIcon [image create photo -file "ScaleImp.png"]
 }
-wm iconphoto . -default $imgIcon
+if [expr ![string eq $imgIcon ""]] {
+	wm iconphoto . -default $imgIcon
+}
 
 set selunit 0
 

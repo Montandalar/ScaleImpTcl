@@ -1,0 +1,11 @@
+Problem:
+2.325 in   @ 120th scale
+59.055 mm  @ 120th scale
+7086.5 mm
+= 23 ft 2 1/1 in??
+
+1 mi = 1760 yd = 1609.344 m
+1 yd = 3 ft = 914.4 mm
+1 ft = 12 in = 304.8 mm
+1 inch = 25.4 mm
+1/64 inch = 0.396875 mm

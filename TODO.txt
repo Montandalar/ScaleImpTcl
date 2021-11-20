@@ -1,0 +1,29 @@
+1. Write a CFF Explorer script 
+(https://ntcore.com/files/cffscriptv2.htm#FUNCTIONS_REFERENCE)
+that will replace all the icons in tclkit with ScaleImp's icon and add that to the build script.
+^ will not work, all PE resources are duplicates of the ones in the VFS, and if the PE resources are edited externally and become out of sync, it won't launch.
+^^ No, it doesn't work because when CFF Explorer saves at the end of the script, it chops the VFS off the end, reducing file size but breaking the whole thing.
+
+2.
+Instead: sdx needs to be patched to force copying tclkit.ico into the new location.
+
+tclkit sdx unwrap sdx
+rename sdx.vfs sdxpatch.vfs
+Patch sdx.patched.vfs\lib\app-sdx\sync.tcl:125
+  -file copy $src $dest
+  +file copy -force $src dest
+    This doesn't work! Instead it means tclkit's icon gets preserved on top of your own tclkit.ico!
+tclkit sdx wrap sdxpatch
+
+Once we have sdxpatch, we can then overwrite the icon in tclkit's own VFS:
+
+tclkit sdxpatch unwrap tclkit.exe
+del tclkit.vfs\tclkit.ico
+copy ScaleImp.ico tclkit.vfs\tclkit.ico
+rename tclkit.vfs tclkit-branded.vfs
+tclkit sdxpatch wrap tclkit-branded -runtime tclkit-for-scaleimp.exe
+
+3. Use ResourceHacker
+ResourceHacker -open tclkit-for-scaleimp.exe -action addoverwrite -res ScaleImp.ico -mask ICONGROUP,TK, -save tclk4si.brand.exe
+
+4. Path detection for build script

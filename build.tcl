@@ -138,9 +138,10 @@ if [expr ![string first win32 $platform]] {
     lassign [got_what_we_wanted "upx$exeSuffix" $env(PATH) $pathSep $slash] \
         overall assigned
     if [expr $overall] {
-        set errorText "UPX not found, final result will not be compressed.\n"
         set haveUpx 1
-    }
+    } else {
+        set errorText "UPX not found, final result will not be compressed.\n"
+	}
 }
 
 set hardDeps "tclkit$exeSuffix sdx"
