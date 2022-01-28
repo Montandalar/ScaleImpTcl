@@ -10,7 +10,7 @@ Rules-Requires-Root: no
 
 Package: scaleimp
 Architecture: all
-Depends: tk8.6
+Depends: tk8.6 ${misc:Depends}
 Description: Scale and length calculator in Tcl/Tk
  ScaleImp is a tool to convert dimensions between imperial and metric units,
  and at your chosen scale. ScaleImp always calculates based on a source unit,

@@ -1,4 +1,4 @@
-#!/bin/wish
+#!/usr/bin/wish
 package require Tk
 
 namespace eval util {

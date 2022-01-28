@@ -6,6 +6,14 @@ This README is a work in progress.
 ### Prebuilt binaries
 Will be made available through GitHub Releases.
 
+Windows: Supported as a portable application, not installable.
+
+Linux: .deb will be provided for Debian, and .rpm for Fedora. I will also try to
+get ScaleImp into these distributions to be available through apt/dnf install.
+
+MacOS: Builds will be provided via a CI environment, but I have no way of verifying
+their correctness since this environment has no GUI.
+
 ### From Source
 
 Prerequisites: tclkit, sdx; Optional: Make, GNU autotools, fossil
@@ -54,6 +62,30 @@ build is done, the final status will appear in a small window, which will either
 tell you your build succeeded or if you were missing prerequisites.
 
 #### Linux
+
+##### Through make install / unsupported distros
+Running `sudo make install` should install ScaleImp just fine as long as you 
+have tk installed. `checkinstall` and similar should work just fine if you
+wanted to make a package that way.
+
+##### Build as a package
+Debhelper should be used to build for Debian and rpmbuild on Fedora. Similarly
+for their derivatives.
+
+For Debian:
+\# apt install debhelper \# pre-requisite for building
+$ dpkg-buildpackage -b --no-sign
+
+(leave off the --no-sign if planning on publishing the package or if you have
+your own PGP key you would like to sign with)
+
+For Fedora: TODO
+\# dnf install rpmbuild
+
+##### As a tclkit
+If for some reason you prefer a portable ScaleImp for Linux, you can run the
+build.tcl process that is usually meant for Windows. Note that this won't give
+you start menu/desktop file entries unlike installing.
 
 Note that UPX is not supported on Linux; UPX doesn't seem to like tclkit.
 
@@ -109,3 +141,7 @@ export CC CXX AR RANLIB TCLKIT STATICTK STATICMK4
 ./kitcreator --host=x86\_64-w64-mingw32
 
 FIXME: mk4tcl build is failing for cross-compile
+
+#### MacOS
+Install `tcl-tck` through homebrew and run build.tcl. Let me know how you go on.
+
