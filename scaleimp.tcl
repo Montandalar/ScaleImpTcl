@@ -35,6 +35,12 @@ namespace eval util {
             return ""
         }; return $v
     }
+
+    proc dotAsZero {v} {
+        if {$v eq "."} then {
+            return "0."
+        }; return $v
+    }
 }
 
 oo::class create MeasurementModel {
@@ -220,7 +226,7 @@ set mm [MeasurementModel new]
 
 tk appname scaleimp
 wm title . ScaleImp
-wm geometry . =500x150
+wm geometry . =700x150
 set imgIcon ""
 if [file exists "/usr/share/icons/hicolor/16x16/apps/scaleimp.png"] {
     set imgIcon [image create photo -file "/usr/share/icons/hicolor/16x16/apps/scaleimp.png"]
@@ -270,7 +276,7 @@ proc recalcByImperial {} {
     set widget_suffixes [list realft realin inchnum inchdenom]
     set entries [list]
     foreach widg $widget_suffixes {
-        lappend entries [.top.realimp.$widg get]
+        lappend entries [::util::dotAsZero [.top.realimp.$widg get]]
     }
     global mm
     $mm setByRealImperial [lindex $entries 0] [lindex $entries 1] \
@@ -297,17 +303,17 @@ proc keyReleaseHandler {widg key} {
             recalcByImperial
         }
         ".top.scaleinches.entry" {
-            $mm setByScaleImperial [.top.scaleinches.entry get]
+            $mm setByScaleImperial [::util::dotAsZero .top.scaleinches.entry get]
         }
         ".mid.scale" {
             global selunit
-            $mm scaleRecalc $scale $selunit
+            $mm scaleRecalc [::util::dotAsZero $scale] $selunit
         }
         ".bottom.realmm.entry" {
-            $mm setByRealmm [.bottom.realmm.entry get]
+            $mm setByRealmm [::util::dotAsZero [.bottom.realmm.entry get]]
         }
         ".bottom.scalemm.entry" {
-            $mm setByScalemm [.bottom.scalemm.entry get]
+            $mm setByScalemm [::util::dotAsZero [.bottom.scalemm.entry get]]
         }
     }
 
@@ -420,11 +426,12 @@ proc arrowKeyHandle dir {
 
 bind . <Key-Up> {arrowKeyHandle -1}
 bind . <Key-Down> {arrowKeyHandle +1}
-focus -force .
 
 bind . <Control-w> exit
 
 setSrc normal disabled disabled disabled
+
+focus -force .top.realimp.realft
 
 #Show the wish console for debugging
 #console show
