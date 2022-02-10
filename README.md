@@ -74,19 +74,32 @@ wanted to make a package that way.
 ##### Build as a package
 Debhelper should be used to build for Debian and rpmbuild on Fedora. Similarly
 for derivative distributions (Debian-\>Ubuntu/Mint; Fedora -\> RHEL/CentOS).
+If I am missing the installation of any dependencies in these instructions 
+please let me know.
 
 For Debian:
 ```
-# apt install debhelper # pre-requisite for building
-$ dpkg-buildpackage -b --no-sign
+apt install debhelper tk # pre-requisite for building - run as root/sudo
+dpkg-buildpackage -b --no-sign
+
+# To install
+dpkg -i ../scaleimp_1.0.0-1_all.deb #run as root/sudo
 ```
 
 (leave off the --no-sign if planning on publishing the package or if you have
 your own PGP key you would like to sign with)
 
-For Fedora: TODO
+For Fedora, starting in ScaleImp's directory:
 ```
-# dnf install rpmbuild
+dnf install rpmbuild tk #as root/via sudo
+mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+
+cp fedora/scaleimp.spec ~/rpmbuild/SPECS/
+rpmbuild -bs ~/rpmbuild/SPECS/scaleimp.spec
+rpmbuild -ba ~/rpmbuild/SPECS/scaleimp.spec
+
+# To install - substitute your appropriate version string
+rpm -i ~/rpmbuild/RPMS/noarch/scaleimp-${ver}.rpm #as root/via sudo
 ```
 
 ##### As a tclkit
