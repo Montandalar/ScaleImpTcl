@@ -1,4 +1,5 @@
-#Debhelper can't change filenames when installing, so make a local directory structure
+# Debhelper can't change filenames when installing, so make a local directory structure
+# Install to / by default or wherever a chroot is pointing
 DESTDIR ?=
 
 scaleimp: scaleimp.tcl
