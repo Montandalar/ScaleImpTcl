@@ -14,17 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        - run: |
+        run: |
           sudo apt-get install -y --no-install-recommends tk dpkg-dev debhelper
 
-        - name: Perform build
-          run: |
+      - name: Perform build
+        run: |
             dpkg-buildpackage -b
-        - uses: actions/upload-artifact@v3
-          with:
-            name: debian-package
-            path: ../scaleimp_1.0.0-1_all.deb
-            
+      - uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: ../scaleimp_1.0.0-1_all.deb
+
+           
 #fedora 35
 #    Dependencies
 #        rpmbuild tk
