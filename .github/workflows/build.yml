@@ -6,11 +6,11 @@ on:
       - '*'
     branches:
       - [ master, gh-workflow ]
-    pull_request:
-      paths:
-        - '*'
-      branches:
-        - [ master, gh-workflow ]
+  pull_request:
+    paths:
+      - '*'
+    branches:
+      - [ master, gh-workflow ]
 
 jobs:
   build_debian:
