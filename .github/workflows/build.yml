@@ -1,12 +1,6 @@
 name: build
 
-on:
-  push:
-    paths:
-      - '*'
-  pull_request:
-    paths:
-      - '*'
+on: [push, pull_request]
 
 jobs:
   build_debian:
