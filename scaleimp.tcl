@@ -303,7 +303,7 @@ proc keyReleaseHandler {widg key} {
             recalcByImperial
         }
         ".top.scaleinches.entry" {
-            $mm setByScaleImperial [::util::dotAsZero .top.scaleinches.entry get]
+            $mm setByScaleImperial [::util::dotAsZero [.top.scaleinches.entry get]]
         }
         ".mid.scale" {
             global selunit
