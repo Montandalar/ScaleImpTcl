@@ -1,4 +1,5 @@
 #!/usr/bin/wish
+package require platform
 package require Tk
 
 namespace eval util {
@@ -365,12 +366,24 @@ proc clearInvalidEntry {widg} {
     }
 }
 
+proc getAltKeyName {} {
+    set platformName [platform::generic]
+    # MacOS is the only exception I know
+    if [expr ![string first "macosx" $platformName]] {
+        return "Command"
+    } else {
+        return "Alt"
+    }
+}
+
+set AltKey [getAltKeyName]
+
 frame .top
 frame .top.realimp
 radiobutton .top.realimp.sel -state normal -variable selunit -value 0 \
                 -text "Real ft" -underline 5 \
                 -command {setSrc normal disabled disabled disabled}
-bind . <Alt-f> {.top.realimp.sel invoke; focus .top.realimp.realft}
+bind . <$AltKey-f> {.top.realimp.sel invoke; focus .top.realimp.realft}
 validatedEntry .top.realimp.realft -width 7 -textvar [$mm varname real_ft]
 #.top.realimp.realft configure -validatecommand exit
 validatedEntry .top.realimp.realin -width 6 -textvar [$mm varname real_in]
@@ -382,12 +395,12 @@ validatedEntry .top.realimp.inchdenom -width 4 \
                    -textvar [$mm varname real_in_denominator]
 label .top.realimp.fractlbl -text "fraction"
 button .top.realimp.clear -text "C" -command "$mm clearImperial" -underline 0
-bind . <Alt-c> {.top.realimp.clear invoke; focus .top.realimp.realft}
+bind . <$AltKey-c> {.top.realimp.clear invoke; focus .top.realimp.realft}
 frame .top.scaleinches
 radiobutton .top.scaleinches.sel -state normal -variable selunit -value 1 \
                 -text "Scale in" -underline 6 \
                 -command {setSrc disabled normal disabled disabled}
-bind . <Alt-i> {.top.scaleinches.sel invoke; focus .top.scaleinches.entry}
+bind . <$AltKey-i> {.top.scaleinches.sel invoke; focus .top.scaleinches.entry}
 validatedEntry .top.scaleinches.entry -width 9 -textvar [$mm varname scale_in]
 
 pack configure .top -side top -fill x -pady 8 -padx 4
@@ -408,7 +421,7 @@ pack configure .top.scaleinches.entry -side left
 frame .mid
 label .mid.prefix -text "1:"
 validatedEntry .mid.scale -width 5 -textvariable [$mm varname scale]
-bind . <Alt-s> {focus .mid.scale}
+bind . <$AltKey-s> {focus .mid.scale}
 label .mid.suffix -text "scale" -underline 0
 
 pack configure .mid -anchor n
@@ -422,7 +435,7 @@ frame .bottom.realmm
 radiobutton .bottom.realmm.sel -state normal -variable selunit -value 2 \
                 -text "Real mm" -underline 5 \
                 -command {setSrc disabled disabled normal disabled}
-bind . <Alt-m> {.bottom.realmm.sel invoke; focus .bottom.realmm.entry}
+bind . <$AltKey-m> {.bottom.realmm.sel invoke; focus .bottom.realmm.entry}
 validatedEntry .bottom.realmm.entry -width 10 -textvar [$mm varname real_mm]
 frame .bottom.scalemm
 radiobutton .bottom.scalemm.sel -state normal -variable selunit -value 3 \
