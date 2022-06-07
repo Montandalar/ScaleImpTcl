@@ -79,7 +79,7 @@ please let me know.
 
 For Debian:
 ```
-apt install debhelper tk # pre-requisite for building - run as root/sudo
+apt install debhelper tk dpkg-dev # pre-requisite for building - run as root/sudo
 dpkg-buildpackage -b --no-sign
 
 # To install
@@ -200,17 +200,22 @@ Mac OS X platform (you probably want amd64).
 The build service doesn't provide for Apple silicon.
 
 ##### Building tclkit from source
-You probably don't need a later tcl version. If you want to build tclkit
-yourself, or can't/won't use the build service, follow these instructions. The
-kitcreator project will be used to make our tclkit.  Since I couldn't find any
-up to date pre-build tclkits from kitcreator, we will be building tclkit from
-source.
 
-TODO: Install Homebrew dependencies, if any? (To be determined)
+  If you want to build tclkit yourself, or can't/won't use the build service,
+follow these instructions.  The kitcreator project will be used to make our
+tclkit.  Since I couldn't find any up to date pre-build tclkits from kitcreator,
+we will be building tclkit from source.
+
+The first step is to install homebrew and build dependencies. You probably don't
+need a later tcl version than the one included with MacOS, but I recommend
+installing it through homebrew regardless.
+
+$ brew install git fossil automake tcl-tk
+$ eval $(/opt/homebrew/bin/brew shellenv)
 
 Open a terminal and build tclkit. A few special arguments are needed to build a
-working tclkit with kitcreator. The following builds for 64-bit Intel/AMD
-processors. I'm not sure how to build for Apple Silicon yet, sorry.
+working tclkit with kitcreator. Despite the confusing syntax of 'x86\_64', the
+following command line will build for either Intel or Apple Silicon Macs:
 
 ```
 fossil clone https://kitcreator.rkeene.org
@@ -262,6 +267,10 @@ Finder. I don't know how to hide the terminal window when running from Finder
 sorry!
 
 #### MacOS - as an application
+
+Follow the above instructions in 'Building ScaleImp', and then package the
+application as a .app along with scaleimp.icns and info.plist (TODO WIP)
+
 I have yet to work out how to turn a tclkit into an application. When I do, I'll
 give instructions on how to assemble the compiled tclkit into an application
 which you can put on the dock and it will have icons.
