@@ -284,8 +284,34 @@ proc recalcByImperial {} {
 }
 
 proc keyReleaseHandler {widg key} {
-    set processKeys [list 0 1 2 3 4 5 6 7 8 9 period BackSpace Delete]
-    if {[lsearch $processKeys $key] == -1} then return
+    # Numpad support.
+    #
+    # Windows: 0 through 9, no special numpad key events
+    #
+    # Linux (X11) - no way to tell Numlock state, all numpad events send these
+    # in order 0-9:
+    # KP_Insert
+    # KP_End
+    # KP_Down
+    # KP_Next
+    # KP_Left
+    # KP_Begin
+    # KP_Right
+    # KP_Home
+    # KP_Up
+    # KP_Prior
+    # (tk doesn't support wayland, so xwayland gives same events if user is under
+    # wayland)
+    
+    # OS X (Monterey)
+    # KP_0 through KP_9
+    set processKeys [list 0 1 2 3 4 5 6 7 8 9 KP_0 KP_1 KP_2 KP_3 KP_4 KP_5 KP_6 \
+        KP_6 KP_7 KP_8 KP_9 KP_Insert KP_End KP_Down KP_Next KP_Left KP_Begin \
+        KP_Right KP_Home KP_Up KP_Prior period BackSpace Delete]
+    if {[lsearch $processKeys $key] == -1} then {
+        puts "keyReleaseHandler: Key not handled: $key"
+        return
+    }
     set scale [.mid.scale get]
     if {$scale eq "" || $scale == 0} then {
         .helptext configure -text "! Scale is invalid !"

@@ -65,6 +65,8 @@ build is done, the final status will appear in a small window, which will either
 tell you your build succeeded or if you were missing prerequisites.
 
 #### Linux
+Note that since Tk has no support for Wayland built in, you will need xwayland
+to run ScaleImp under wayland.
 
 ##### Through make install / unsupported distros
 Running `sudo make install` should install ScaleImp just fine as long as you 
