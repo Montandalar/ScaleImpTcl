@@ -187,23 +187,23 @@ cd ScaleImpTcl
 wish ./scaleimp.tcl
 ```
 
-#### MacOS - as a tclkit
+#### MacOS - as an application
 The first step is to acquire a tclkit binary, which ScaleImp's build.tcl can 
-then use to build itself into a standalone application. You may struggle a bit
-if you are trying to run on Apple Silicon - the following instructions are only
-guaranteed for Intel Macs for now.
+then use to build itself into a standalone application. 
 
-##### Acquiring tclkit pre-build binaries
+##### Acquiring tclkit pre-built binaries
 Unlike Windows, which has manually built tclkits, you will need to request
 builds through the kitcreator web interface if you don't want to build tclkit
 yourself. Visit https://kitcreator.rkeene.org/kitcreator and build a kit with a
 Mac OS X platform (you probably want amd64).
 
-The build service doesn't provide for Apple silicon.
+The build service doesn't provide for Apple silicon; an apple silicon build of
+tclkit has been provided in this repository that I built myself on MacOS
+Monterey 12.4. This is the tclkit used for the binary Apple Silicon release of
+ScaleImp.
 
 ##### Building tclkit from source
-
-  If you want to build tclkit yourself, or can't/won't use the build service,
+If you want to build tclkit yourself, or can't/won't use the build service,
 follow these instructions.  The kitcreator project will be used to make our
 tclkit.  Since I couldn't find any up to date pre-build tclkits from kitcreator,
 we will be building tclkit from source.
@@ -264,15 +264,7 @@ macOS or from homebrew. That `sdx` would cause the build to fail.
 
 After a few seconds, you should get a little pop-up window saying "Built
 ScaleImpTcl successfully!" and an executable file called scaleimp should appear
-in your build directory. You can run this executbale from a Terminal or from 
-Finder. I don't know how to hide the terminal window when running from Finder 
+in your build directory. You can run this executable from a Terminal or from 
+Finder, or you can use the built ScaleImp.app in your own Applications
+directory. I don't know how to hide the terminal window when running from Finder 
 sorry!
-
-#### MacOS - as an application
-
-Follow the above instructions in 'Building ScaleImp', and then package the
-application as a .app along with scaleimp.icns and info.plist (TODO WIP)
-
-I have yet to work out how to turn a tclkit into an application. When I do, I'll
-give instructions on how to assemble the compiled tclkit into an application
-which you can put on the dock and it will have icons.

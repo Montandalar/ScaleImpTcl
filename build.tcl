@@ -117,6 +117,16 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
     }
 
     file rename -force scaleimp scaleimp$exeSuffix
+
+    # Build mac .app directory
+    if [expr ![string first macosx $platform]] {
+        file mkdir ScaleImp.app/Contents/Resources
+        file copy -force scaleimp.icns ScaleImp.app/Contents/Resources/scaleimp.icns
+
+        file mkdir ScaleImp.app/Contents/MacOS
+        file copy -force scaleimp$exeSuffix ScaleImp.app/Contents/MacOS/scaleimp
+    }
+
     return "Built ScaleImpTcl successfully!";
 }
 
