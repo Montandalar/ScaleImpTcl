@@ -241,7 +241,9 @@ if [expr ![string eq $imgIcon ""]] {
 set selunit 0
 
 proc inputvalidate {evtyp newval widg} {
+    puts "inputvalidate: $evtyp $newval $widg"
     global mm
+    # Do not respond to synthetic events
     if [expr $evtyp != 1] then {
         return 1
     }
@@ -252,8 +254,11 @@ proc inputvalidate {evtyp newval widg} {
 proc validatedEntry {name args} {
     eval entry $name -validate key -validatecommand \{inputvalidate %d %P %W\} \
             {*}$args 
-    bind $name <KeyRelease> "keyReleaseHandler $name %K"
     bind $name <FocusOut> "clearInvalidEntry $name"
+    # 'Fix' Ctrl-A to select all on Linux (works fine other platforms)
+    bind $name <Control-Key-a> "selectAllText $name"
+
+    bind $name <KeyRelease> "keyReleaseHandler $name %K"
 }
 
 label .helptext -text "Select source unit with the radio buttons"
@@ -310,7 +315,7 @@ proc keyReleaseHandler {widg key} {
         KP_6 KP_7 KP_8 KP_9 KP_Insert KP_End KP_Down KP_Next KP_Left KP_Begin \
         KP_Right KP_Home KP_Up KP_Prior period BackSpace Delete]
     if {[lsearch $processKeys $key] == -1} then {
-        puts "keyReleaseHandler: Key not handled: $key"
+        #puts "keyReleaseHandler: Key not handled: $key"
         return
     }
     set scale [.mid.scale get]
@@ -377,6 +382,18 @@ proc getAltKeyName {} {
 }
 
 set AltKey [getAltKeyName]
+
+# No thanks Emacs users
+event delete <<LineStart>> <Control-Key-a>
+event delete <<SelectAll>> <Control-Key-slash>
+#doesn't work - overriden by keyReleaseHandler
+event add <<SelectAll>> <Control-Key-a>>
+
+proc selectAllText {widg} {
+    $widg icursor end
+    $widg sel range 0 end
+    return 1
+}
 
 frame .top
 frame .top.realimp
