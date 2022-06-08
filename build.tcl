@@ -1,6 +1,49 @@
 #!/usr/bin/tclsh
 package require platform
-package require Tk
+
+## COMMAND-LINE ARGS
+set showGUI 1
+set buildkit ""
+set TCLKIT ""
+foreach arg $argv {
+	# --no-gui: Run without the build GUI. MUST also use --build-kit arg to build in
+	# a CLI-only environment, as the tk-enabled runtime tclkit will be used by
+	# default
+	if [string equal $arg "--no-gui"] { 
+		set showGUI 0
+		puts "Running the build in CLI mode."
+	}
+
+	# --build-kit: Specify a separate tclkit for building the runtime. The build
+	# tclkit does not need to have Tk.
+	if [expr [string first "--build-kit" $arg] == 0] {
+		# Extract the part after the =
+		set buildkit [string range $arg 12 end]
+		if [expr ![file exists $buildkit]] {
+			puts "No such --build-kit: $buildkit"
+			return 1
+		} else {
+			puts "Build kit: $buildkit"
+		}
+	}
+
+	# --runtime-kit: Specify a runtime kit instead of searching PATH for a file
+	# called `tclkit(.exe)`.
+	if [expr [string first "--runtime-kit" $arg] == 0] {
+		set TCLKIT [string range $arg 14 end]
+		if [expr ![file exists $TCLKIT]] {
+			puts "No such --runtime-kit: $TCLKIT"
+			return 2
+		} else {
+			puts "Runtime kit: $TCLKIT"
+		}
+	}
+}
+
+if $showGUI {
+	puts "Running the build GUI."
+	package require Tk
+}
 
 proc fixPath {path platform} {
     if [expr ![string first win32 $platform]] {
@@ -9,6 +52,8 @@ proc fixPath {path platform} {
         return $path
     }
 }
+
+## LIBRARY FUNCTIONS
 
 #For each of the wanted files, find it on the path, and complain if not found.
 proc got_what_we_wanted {wanted PATH pathsep slash} {
@@ -66,27 +111,44 @@ proc needPrereqs {assigned} {
     return $errortext
 }
 
-proc doBuild {haveUpx platform exeSuffix progs slash} {
+proc doBuild {haveUpx platform exeSuffix progs slash BUILDKIT \
+	haveRH showGUI TCLKIT} \
+{
+
+	puts "Cleaning up old artifacts"
     # Clean up any previous artificates
     file delete -force scaleimp;
     file delete -force scaleimp$exeSuffix
     file delete -force scaleimp.vfs
     file delete -force tclkit-for-scaleimp$exeSuffix
+	file delete -force ScaleImp.app/Contents/MacOS
+	file delete -force ScaleImp.app/Contents/Resources
 
+	# Thanks tcl for using forward slash even on Windows :|
+	if [string equal $TCLKIT ""] {
+		set TCLKIT [fixPath [dict get $progs tclkit$exeSuffix] $platform]
+	}
+
+	if [string equal $BUILDKIT ""] {
+		set BUILDKIT $TCLKIT 
+	}
+
+	puts "Making a copy of the runtime kit"
     # If I try to use a tcl file copy, it extracts the metakit filesystem out of
     # tclkit.exe and dumps it to a directory called scaleimp.exe. Not useful!
     if [expr ![string first win32 $platform]] {
-        # Thanks tcl for using forward slash even on Windows :|
-        set TCLKIT [string map {/ \\} [dict get $progs tclkit$exeSuffix]]
-        exec cmd /c copy /y $TCLKIT tclkit-for-scaleimp$exeSuffix
+        exec cmd /c copy /y "$TCLKIT" ".\\tclkit-for-scaleimp$exeSuffix"
     } else { #UNIXy
-        exec cp [dict get $progs tclkit$exeSuffix] tclkit-for-scaleimp$exeSuffix
+        exec cp $TCLKIT ./tclkit-for-scaleimp$exeSuffix
     }
 
-    # Branding
+	puts "Making the vfs"
+    # In-kit branding 
     file mkdir scaleimp.vfs
     file copy -force scaleimp24.png scaleimp.vfs${slash}ScaleImp.png
-    if [expr ![string first "win32" $platform]] {
+
+    if [expr ![string first "win32" $platform] && $haveRH] {
+		puts "Applying branding via ResourceHacker"
         exec ResourceHacker -open tclkit-for-scaleimp$exeSuffix \
             -action addoverwrite \
             -res ScaleImp.ico \
@@ -97,29 +159,39 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
                     tclkit-for-scaleimp$exeSuffix
     }
 
+	puts "Packaging ScaleImp"
     # Packaging ScaleImp code
     file copy -force scaleimp.tcl scaleimp.vfs${slash}main.tcl
     set SDX [fixPath [dict get $progs sdx] $platform]
-    set TCLKIT [fixPath [dict get $progs tclkit$exeSuffix] $platform]
-    set pid [exec $TCLKIT $SDX \
-        wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix &]
-    after 2000
-    if [expr ![string first win32 $platform]] {
-        exec taskkill /f /pid $pid
-        } else { #UNIXy
-            try {
-            exec kill $pid
-        } trap CHILDSTATUS {} {}
-    }
+
+	if $showGUI {
+		set pid [exec $BUILDKIT $SDX \
+			wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix &]
+		after 2000
+		if [expr ![string first win32 $platform]] {
+			exec taskkill /f /pid $pid
+			} else { #UNIXy
+				try {
+				exec kill $pid
+			} trap CHILDSTATUS {} {}
+		}
+	} else {
+		exec $BUILDKIT $SDX wrap scaleimp -runtime tclkit-for-scaleimp$exeSuffix
+	}
 
     if $haveUpx {
-        exec upx scaleimp
+		puts "Compressing ScaleImp with UPX"
+		# After wrapping with TCLKIT, $exeSuffix is never present
+        exec upx scaleimp 
     }
 
+	puts "Renaming with exeSuffix"
     file rename -force scaleimp scaleimp$exeSuffix
 
     # Build mac .app directory
     if [expr ![string first macosx $platform]] {
+		puts "Building .app directory"
+
         file mkdir ScaleImp.app/Contents/Resources
         file copy -force scaleimp.icns ScaleImp.app/Contents/Resources/scaleimp.icns
 
@@ -129,6 +201,8 @@ proc doBuild {haveUpx platform exeSuffix progs slash} {
 
     return "Built ScaleImpTcl successfully!";
 }
+
+## MAIN PROCEDURE
 
 set platform [platform::generic]
 if [expr ![string first win32 $platform]] {
@@ -143,21 +217,35 @@ if [expr ![string first win32 $platform]] {
 
 set errorText ""
 set haveUpx 0
-#UPX only supported on Windows; on linux it kills the VFS
+set haveRH 0
+
+# UPX only supported on Windows; on linux it kills the VFS and not tested on
+# macOS.
 if [expr ![string first win32 $platform]] {
     lassign [got_what_we_wanted "upx$exeSuffix" $env(PATH) $pathSep $slash] \
-        overall assigned
+		overall assigned
     if [expr $overall] {
         set haveUpx 1
     } else {
-        set errorText "UPX not found, final result will not be compressed.\n"
+		set msg "UPX not found, final result will not be compressed.\n" 
+		puts "$msg"
+        set errorText "$msg"
+	}
+}
+
+if [expr ![string first win32 $platform]] {
+	lassign [got_what_we_wanted "ResourceHacker$exeSuffix" $env(PATH) \
+		$pathSep $slash] overall assigned
+	if [expr $overall] {
+		set haveRH 1
+	} else {
+		set msg "ResourceHacker not found, branding will not be applied during this build\n" 
+		puts "$msg"
+        set errorText [string cat $errorText $msg]
 	}
 }
 
 set hardDeps "tclkit$exeSuffix sdx"
-if [expr ![string first win32 $platform]] {
-    set hardDeps [lappend hardDeps ResourceHacker.exe]
-}
 
 lassign [ \
     got_what_we_wanted "$hardDeps" \
@@ -169,11 +257,15 @@ lassign [ \
 if [expr !$overall] {
     set errorText [string cat $errorText [needPrereqs $assigned]]
 } else {
-    set errorText [string cat $errorText \
-        [doBuild $haveUpx $platform $exeSuffix $assigned $slash]]
+    set buildResult [doBuild $haveUpx $platform $exeSuffix $assigned $slash \
+		$buildkit $haveRH $showGUI $TCLKIT]
+    set errorText [string cat $errorText $buildResult]
+	puts $buildResult
 }
 
-label .helptext -text $errorText
-pack configure .helptext -side bottom
-bind . <Escape> exit
-focus -force .
+if [expr "$showGUI"] {
+	label .helptext -text $errorText
+	pack configure .helptext -side bottom
+	bind . <Escape> exit
+	focus -force .
+}

@@ -1,0 +1,30 @@
+tclkit-gui-8_6_1-twapi-4_5_2-x64-max.exe	From kitcreator project
+tclkit-gui-8_6_1-twapi-4_5_2-x64-max.exe	From kitcreator project
+tclkit-macosx-arm	Own build
+tclkit-macosx-x86_64	Own build
+
+This directory contains binaries of tclkit created through the KitCreator
+project. The following license statement applies for all of the tclkits, but
+ScaleImp itself is licensed under the GPL. Linux tclkits are not used, as the
+scripts are installed directly in the binaries directories on that platform
+instead of ELF via make.
+
+Copyright (c) 2010  Roy S. Keene
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

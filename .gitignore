@@ -1,5 +1,6 @@
 .*.swp
 *.exe
+!tclkits-prebuilt/*.exe
 sdx
 ResourceHacker.ini
 Session.vim
