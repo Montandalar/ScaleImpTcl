@@ -137,7 +137,8 @@ proc doBuild {haveUpx platform exeSuffix progs slash BUILDKIT \
     # If I try to use a tcl file copy, it extracts the metakit filesystem out of
     # tclkit.exe and dumps it to a directory called scaleimp.exe. Not useful!
     if [expr ![string first win32 $platform]] {
-        exec cmd /c copy /y "$TCLKIT" ".\\tclkit-for-scaleimp$exeSuffix"
+		# This works way better than calling into cmd because copy is a cmd builtin!
+        exec PowerShell -Command Copy-Item $TCLKIT "tclkit-for-scaleimp$exeSuffix"
     } else { #UNIXy
         exec cp $TCLKIT ./tclkit-for-scaleimp$exeSuffix
     }
@@ -245,7 +246,12 @@ if [expr ![string first win32 $platform]] {
 	}
 }
 
-set hardDeps "tclkit$exeSuffix sdx"
+set hardDeps "sdx"
+if [string equal "" $TCLKIT] {
+	set hardDeps [string cat "tclkit$exeSuffix " $hardDeps]
+} else {
+	puts "Using tclkit specified on command line"
+}
 
 lassign [ \
     got_what_we_wanted "$hardDeps" \
@@ -260,7 +266,6 @@ if [expr !$overall] {
     set buildResult [doBuild $haveUpx $platform $exeSuffix $assigned $slash \
 		$buildkit $haveRH $showGUI $TCLKIT]
     set errorText [string cat $errorText $buildResult]
-	puts $buildResult
 }
 
 if [expr "$showGUI"] {
@@ -268,4 +273,11 @@ if [expr "$showGUI"] {
 	pack configure .helptext -side bottom
 	bind . <Escape> exit
 	focus -force .
+} else {
+	if [string equal "" $errorText] then {
+		return 0
+	} else {
+		puts $errorText
+		return 3
+	}
 }

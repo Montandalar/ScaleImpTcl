@@ -1,0 +1,37 @@
+# Ref https://docs.gitlab.com/ee/ci/yaml/index.html
+
+#TODO: File cache for `sdx`. Does this work?
+cache:
+  key: sdx
+  paths:
+    - sdx
+
+variables:
+  SCALEIMP_VER: "1.0.0"
+
+# Windowses are platform-specific binaries
+# TODO: Build 64 and 32 bit kits by using both tclkit-prebuilts
+
+win-x86_64:
+  tags:
+    - windows
+  before_script:
+    - If (Test-Path -Path sdx)  {
+        Write-Output "sdx was cached"
+      } else {
+        curl https://chiselapp.com/user/aspect/repository/sdx/uv/sdx-20110317.kit
+          -o sdx
+      }
+  script:
+    - Get-Location
+    - Get-ChildItem
+    - tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x64-max.exe build.tcl
+        --no-gui
+        --build-kit=./tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x64-max.exe
+        --runtime-kit=./tclkits-prebuilt/tclkit-gui-8_6_11-twapi-4_5_2-x64-max.exe
+  after_script:
+    - Get-ChildItem
+  artifacts:
+    name: "scaleimp-windows-64.exe"
+    paths:
+      - scaleimp.exe
