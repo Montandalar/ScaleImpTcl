@@ -189,7 +189,7 @@ apt install debhelper tk dpkg-dev # pre-requisite for building - run as root/sud
 dpkg-buildpackage -b --no-sign
 
 # To install
-dpkg -i ../scaleimp_1.0.0-1_all.deb #run as root/sudo
+dpkg -i ../scaleimp_1.0.1-1_all.deb #run as root/sudo
 ```
 
 (leave off the --no-sign if planning on publishing the package or if you have

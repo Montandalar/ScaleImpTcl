@@ -7,9 +7,10 @@ cache:
 
 stages:
   - build
+  - release
 
 variables:
-  SCALEIMP_VER: "1.0.0"
+  SCALEIMP_VER: "1.0.1"
   SCALEIMP_DEBIAN_EPOCH: "1"
 
 .win_template:
@@ -36,8 +37,12 @@ win-x86_64:
         --no-gui
         --build-kit=./tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x64-max.exe
         --runtime-kit=./tclkits-prebuilt/tclkit-gui-8_6_11-twapi-4_5_2-x64-max.exe
+  after_script:
+    - Write-Output "WINDOWS32_JOB_ID=$CI_JOB_ID" >> job.env
   artifacts:
     name: "scaleimp-windows-64.exe"
+    reports:
+      dotenv: job.env
 
 win-x86_32:
   extends: .win_template
@@ -48,8 +53,12 @@ win-x86_32:
         --no-gui
         --build-kit=./tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x86-max.exe
         --runtime-kit=./tclkits-prebuilt/tclkit-gui-8_6_11-twapi-4_5_2-x86-max.exe
+  after_script:
+    - Write-Output "WINDOWS64_JOB_ID=$CI_JOB_ID" >> job.env
   artifacts:
     name: "scaleimp-windows-32.exe"
+    reports:
+      dotenv: job.env
 
 .unix_deps:
   stage: build
@@ -68,14 +77,17 @@ debian:
 #FIXME: Sign the package by getting the signing key from some keyvault?
     - dpkg-buildpackage -b --no-sign
     - mv ../scaleimp_* . #Artifacts are produced outside pwd - GitLab artifacts must be inside pwd
-  artifacts:
-    name: "scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all_debian"
-    paths:
-      - "scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all.deb"
   after_script:
     - ls
     - ls ..
     - dpkg -i scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all.deb
+    - echo "DEBIAN_JOB_ID=$CI_JOB_ID" >> job.env
+  artifacts:
+    name: "scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all_debian"
+    paths:
+      - "scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all.deb"
+    reports:
+      dotenv: job.env
 
 fedora:
   extends: .unix_deps
@@ -88,10 +100,36 @@ fedora:
     - rpmbuild --undefine=_disable_source_fetch -bs ~/rpmbuild/SPECS/scaleimp.spec
     - rpmbuild --undefine=_disable_source_fetch -ba ~/rpmbuild/SPECS/scaleimp.spec
     - cp -v ~/rpmbuild/RPMS/noarch/scaleimp-*.rpm . #can't upload artifacts outside pwd
+  after_script:
+    - ls ~/rpmbuild/RPMS/noarch/ || true
+    - rpm -i ~/rpmbuild/RPMS/noarch/scaleimp-*.rpm
+    - echo "FEDORA_JOB_ID=$CI_JOB_ID" >> job.env
   artifacts:
     name: "scaleimp-$SCALEIMP_VER-fedora"
     paths:
       - "*.rpm"
-  after_script:
-    - ls ~/rpmbuild/RPMS/noarch/ || true
-    - rpm -i ~/rpmbuild/RPMS/noarch/scaleimp-*.rpm
+    reports:
+      dotenv: job.env
+
+#https://stackoverflow.com/questions/52605198/passing-job-id-to-next-job
+release_job:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG # Only on tag create
+  script:
+    - echo "running release_job"
+  release:                               # See https://docs.gitlab.com/ee/ci/yaml/#release for available properties
+    name: "ScaleImp $CI_COMMIT_TAG Released"
+    tag_name: '$CI_COMMIT_TAG'
+    description: './changelogs/release-1.0.1.md'
+    assets:
+      links:
+      - name: "scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all_debian.deb"
+        url: "https://gitlab.com/blockhead-foss-projects/scaleimptcl/-/jobs/${DEBIAN_JOB_ID}/artifacts/download"
+      - name: "scaleimp-${SCALEIMP_VER}-fedora.rpm"
+        url: "https://gitlab.com/blockhead-foss-projects/scaleimptcl/-/jobs/${FEDORA_JOB_ID}/artifacts/download"
+      - name: "scaleimp-${SCALEIMP_VER}-windows-32.exe"
+        url: "https://gitlab.com/blockhead-foss-projects/scaleimptcl/-/jobs/${WINDOWS32_JOB_ID}/artifacts/download"
+      - name: "scaleimp-${SCALEIMP_VER}-windows-64.exe"
+        url: "https://gitlab.com/blockhead-foss-projects/scaleimptcl/-/jobs/${WINDOWS64_JOB_ID}/artifacts/download"

@@ -1,3 +1,9 @@
+scaleimp (1.0.1-1) unstable; urgency=medium
+
+  * New release
+
+ -- Jason Bigelow <jbis1337@hotmail.com> Fri, 16 Sep 2022 21:26:52 +1000
+
 scaleimp (1.0.0-1) unstable; urgency=medium
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
