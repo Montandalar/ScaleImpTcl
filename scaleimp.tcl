@@ -469,20 +469,6 @@ pack configure .bottom.scalemm -side right -padx 12
 pack configure .bottom.scalemm.sel -side left
 pack configure .bottom.scalemm.entry -side left
 
-proc arrowKeyHandle dir {
-    global selunit
-    set selunit [expr ($selunit + $dir) % 4]
-    switch -exact selunit {
-        0 { .top.realimp.sel invoke }
-        1 { .top.scaleinches.sel invoke }
-        2 { .bottom.realmm.sel invoke }
-        3 { .bottom.scalemm.sel invoke }
-    }
-}
-
-bind . <Key-Up> {arrowKeyHandle -1}
-bind . <Key-Down> {arrowKeyHandle +1}
-
 bind . <Control-w> exit
 
 setSrc normal disabled disabled disabled
