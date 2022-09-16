@@ -3,11 +3,16 @@ ScaleImp is a tool to convert dimensions between imperial and metric units,
 and at your chosen scale. It is a lightweight native application that you can
 run today on Windows or Linux; or macOS in the near future.
 
-A screenshot will probably help explain it best:
+A screenshot will probably help explain it best. Here is how ScaleImp looks on
+Windows, macOS and KDE Plasma:
 
-## What could I do with ScaleImp?  ScaleImp is great for anyone dealing with
-physical measurements who needs to work in multiple unit systems and/or with a
-scale factor.
+![A series of 3 screenshots showing ScaleImp's interface on Windows, macOS and
+KDE Plasma](screenshots.png)
+
+
+## What could I do with ScaleImp?
+ScaleImp is great for anyone dealing with physical measurements who needs to 
+work in multiple unit systems and/or with a scale factor.
 
 * Use it just to convert units from one system to another.
 * Convert imperial dimensions off old plans into scale metric dimensions.
