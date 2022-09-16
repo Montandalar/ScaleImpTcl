@@ -1,0 +1,1 @@
+tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x64-max.exe build.tcl --no-gui --build-kit=./tclkits-prebuilt/tclkit-cli-8_6_11-twapi-4_5_2-x64-max.exe --runtime-kit=./tclkits-prebuilt/tclkit-gui-8_6_11-twapi-4_5_2-x64-max.exe
