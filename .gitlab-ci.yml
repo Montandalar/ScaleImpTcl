@@ -5,11 +5,15 @@ cache:
   paths:
     - sdx
 
+stages:
+  - build
+
 variables:
   SCALEIMP_VER: "1.0.0"
   SCALEIMP_DEBIAN_EPOCH: "1"
 
 .win_template:
+  stage: build
   tags:
     - windows
   before_script:
@@ -48,6 +52,7 @@ win-x86_32:
     name: "scaleimp-windows-32.exe"
 
 .unix_deps:
+  stage: build
   before_script:
     - (test -f sdx && echo "sdx was cached") ||
       curl https://chiselapp.com/user/aspect/repository/sdx/uv/sdx-20110317.kit
