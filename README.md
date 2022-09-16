@@ -29,6 +29,16 @@ Installable ScaleImp is only supported on Linux for now.
 
 #### Windows
 
+##### The easy way
+Run `build-easy.cmd`. This will use the prebuilt tclkit included in the source
+repository to build ScaleImp. Branding is pre-applied to that kit, so you don't
+have to download any dependencies.
+
+##### The hard way: grabbing all dependencies yourself
+If you don't trust my prebuilt tclkit, want to apply a different icon to
+ScaleImp, or want produce an even smaller executable by using UPX, or just like
+making life harder for yourself, you can follow these instructions.
+
 Prerequisites are:
 * tclkit - basis of a standalone Tcl/Tk program
 * sdx - tool for packing ScaleImp into tclkit
