@@ -71,3 +71,22 @@ debian:
     - ls
     - ls ..
     - dpkg -i scaleimp_${SCALEIMP_VER}-${SCALEIMP_DEBIAN_EPOCH}_all.deb
+
+fedora:
+  extends: .unix_deps
+  image: fedora:35
+  before_script:
+    - mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+    - cp fedora/scaleimp.spec ~/rpmbuild/SPECS
+  script:
+    - dnf install -y rpm-build tk make
+    - rpmbuild --undefine=_disable_source_fetch -bs ~/rpmbuild/SPECS/scaleimp.spec
+    - rpmbuild --undefine=_disable_source_fetch -ba ~/rpmbuild/SPECS/scaleimp.spec
+    - cp -v ~/rpmbuild/RPMS/noarch/scaleimp-*.rpm . #can't upload artifacts outside pwd
+  artifacts:
+    name: "scaleimp-$SCALEIMP_VER-fedora"
+    paths:
+      - "*.rpm"
+  after_script:
+    - ls ~/rpmbuild/RPMS/noarch/ || true
+    - rpm -i ~/rpmbuild/RPMS/noarch/scaleimp-*.rpm
