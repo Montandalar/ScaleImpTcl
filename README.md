@@ -249,19 +249,27 @@ If it throws an error, the tclkit is bad. Make sure you gave the right arguments
 to kitcreator.
 
 ##### Building ScaleImp
-Once you have a working tclkit, copy it into ScaleImp's source tree. You do not
-need another tcl interpreter like the Mac tcl or tcl-tk from homebrew: the 
-tclkit will be our interpreter for the build script.
+Once you have a working tclkit, copy it into the root of ScaleImp's source tree.
+In case you are using the prebuilt tclkits, this means you need to copy the
+tclkit file from tclkits-prebuilt/ up one directory into this directory. e.g.
+
+```
+cp tclkits-prebuilt/tclkit-macosx-arm ./tclkit
+```
+or 
+```
+cp ~/Downloads/tclkit-something-or-other ./tclkit
+```
+
+You do not need another tcl interpreter like the Mac tcl or tcl-tk from
+homebrew: the tclkit will be our interpreter for the build script. However the 
+file must definitely called `tclkit`.
 
 Next, download sdx from:
 https://chiselapp.com/user/aspect/repository/sdx/index
 
 sdx has to be called `sdx` to be detected. Rename it from the downloaded file
 and put it in ScaleImp's directory or on your `PATH`.
-
-Also move your tclkit from your Download or kitcreator build directory to
-ScaleImp's directory or on your PATH, and rename it from `tclkit-8.6.xx` 
-to just `tclkit`.
 
 Now to run the build, run the following in a terminal:
 
@@ -270,11 +278,14 @@ PATH=.:$PATH ./tclkit build.tcl
 ```
 
 The `PATH` definition is important so that we don't run `sdx` that shipped with
-macOS or from homebrew. That `sdx` would cause the build to fail.
+macOS or from homebrew. That `sdx` would cause the build to fail. If you left
+your sdx somewhere else than `.`, just make sure it appears in the path BEFORE
+the system and homebrew directories.
 
 After a few seconds, you should get a little pop-up window saying "Built
-ScaleImpTcl successfully!" and an executable file called scaleimp should appear
-in your build directory. You can run this executable from a Terminal or from 
-Finder, or you can use the built ScaleImp.app in your own Applications
-directory. I don't know how to hide the terminal window when running from Finder 
-sorry!
+ScaleImpTcl successfully!" and an executable file called `scaleimp` should
+appear in your build directory. You can run this executable from a Terminal or
+from Finder, or you can use the built `ScaleImp.app` (finder will only display
+the name `ScaleImp` of course) in your own Applications directory. I don't know
+how to hide the terminal window when running `scaleimp` from Finder sorry - it's
+better to just run the .app :)
