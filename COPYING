@@ -1,11 +1,12 @@
-The code of ScaleImpTcl is provided under the GNU GPL version 3.
+The code of ScaleImpTcl is provided under the GNU GPL version 3 or later, at
+your option.
 
 The ScaleImp logo files, in the original SVG format and in the lesser resolution
 icons which have been manually prepared, are all licensed under the Creative
-Commons Attribution Share Alike 3.0 Unported Licence (CC-BY-SA 3.0).
+Commons Attribution-ShareAlike 4.0 International Licence (CC BY-SA 4.0).
 
 This program uses TclKit for binary distribution on Windows and macOS; see
-README and tclkits-prebuild/COPYRIGHT for more information.
+README and tclkits-prebuild/COPYING for more information.
 
 Copyright (c) 2010  Roy S. Keene
 
@@ -37,9 +38,12 @@ under the Special Exception for Compressed Executables anyway.
    UCL is Copyright (C) 1996-2000 Markus Franz Xaver Johannes Oberhumer
 
 The instructions for building this program recommend the use of ResourceHacker
-in order to apply the ScaleImp icon to the executable. The terms of
+in order to apply the ScaleImp icon to the executable. The licence of
 ResourceHacker forbid its distribution except from the project's approved
 websites, so I cannot commit it to this code repository. I also do not want to
 hit the ResourceHacker website with automated traffic when building ScaleImp in
-a Continuous Integration environment. For this reason I have pre-applied to
-ScaleImp branding to the tclkits provided in tclkits-prebuilt/*.exe
+a Continuous Integration environment. For this reason I have pre-applied
+ScaleImp branding to the tclkits provided in tclkits-prebuilt/*.exe.
+
+For more information about the specific origins of the prebuilt tclkit files,
+see the file tclkits-prebuilt/COPYING.
